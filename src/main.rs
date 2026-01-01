@@ -23,24 +23,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             trimmed.to_string()
         })
         .collect();
-
     let delay_before_start = 5;
     println!("⚠️  У тебя {} секунд чтобы:", delay_before_start);
     println!("   1. Переключиться на Parallels Desktop");
     println!("   2. Кликнуть в окно Minecraft");
     println!("   3. Убедиться что чат закрыт (нажми Esc)");
     println!();
-
     for i in (1..=delay_before_start).rev() {
         println!("Начинаю через {}...", i);
         thread::sleep(Duration::from_secs(1));
     }
-
-    println!("🚀 ПОЕХАЛИ!");
-
     let mut enigo = Enigo::new(&Settings::default())?;
     let mut clipboard = Clipboard::new()?;
-
     for (i, command) in commands.iter().enumerate() {
 
         thread::sleep(Duration::from_millis(500));
@@ -59,12 +53,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         thread::sleep(Duration::from_millis(200));
         enigo.key(Key::Return, Click)?;
         thread::sleep(Duration::from_millis(200));
-
-        
     }
-
     println!();
     println!("✅ Готово! Выполнено команд: {}", commands.len());
-
     Ok(())
 }
