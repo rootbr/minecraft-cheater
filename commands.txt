@@ -1,14 +1,525 @@
-# Очищаем по 15 блоков в высоту
-/fill 85 104 85 115 118 115 air
-/fill 85 119 85 115 133 115 air
-/fill 85 134 85 115 148 115 air
-/fill 85 149 85 115 163 115 air
-/fill 85 164 85 115 178 115 air
-/fill 85 179 85 115 193 115 air
-/fill 85 194 85 115 208 115 air
-/fill 85 209 85 115 223 115 air
-/fill 85 224 85 115 238 115 air
-/fill 85 239 85 115 253 115 air
-/fill 85 254 85 115 268 115 air
-/fill 85 269 85 115 283 115 air
-/fill 85 284 85 115 300 115 air
+# КРАСИВАЯ БАШНЯ-КРЕПОСТЬ
+# Bedrock Edition
+# Координаты: X=100, Z=100, Y=104-150
+# Обсидиановый фундамент 10 блоков, выше - камень и дерево
+
+# ============================================
+# === ЧАСТЬ 0: ОЧИСТКА ОБЛАСТИ ===
+# ============================================
+
+/fill 85 104 85 115 120 115 air
+/fill 85 121 85 115 135 115 air
+/fill 85 136 85 115 155 115 air
+/fill 85 104 85 115 120 115 air
+/fill 85 121 85 115 135 115 air
+/fill 85 136 85 115 155 115 air
+
+# ============================================
+# === ЧАСТЬ 1: ОБСИДИАНОВЫЙ ФУНДАМЕНТ (Y=104-114) ===
+# ============================================
+
+# Основание платформы
+/fill 88 104 88 112 104 112 obsidian
+/fill 90 104 90 110 104 110 deepslate_bricks
+
+# Стены фундамента (толстые, 2 блока)
+/fill 88 105 88 112 114 112 obsidian hollow
+/fill 90 105 90 110 114 110 air
+
+# Угловые башенки фундамента
+/fill 86 104 86 89 114 89 obsidian hollow
+/fill 111 104 86 114 114 89 obsidian hollow
+/fill 86 104 111 89 114 114 obsidian hollow
+/fill 111 104 111 114 114 114 obsidian hollow
+
+# Внутри угловых башенок - воздух
+/fill 87 105 87 88 114 88 air
+/fill 112 105 87 113 114 88 air
+/fill 87 105 112 88 114 113 air
+/fill 112 105 112 113 114 113 air
+
+# Зубцы на фундаменте
+/fill 88 115 88 112 117 88 obsidian
+/fill 89 116 88 89 116 88 air
+/fill 91 116 88 91 116 88 air
+/fill 93 116 88 93 116 88 air
+/fill 95 116 88 95 116 88 air
+/fill 97 116 88 97 116 88 air
+/fill 99 116 88 99 116 88 air
+/fill 101 116 88 101 116 88 air
+/fill 103 116 88 103 116 88 air
+/fill 105 116 88 105 116 88 air
+/fill 107 116 88 107 116 88 air
+/fill 109 116 88 109 116 88 air
+/fill 111 116 88 111 116 88 air
+
+/fill 88 115 112 112 117 112 obsidian
+/fill 89 116 112 89 116 112 air
+/fill 91 116 112 91 116 112 air
+/fill 93 116 112 93 116 112 air
+/fill 95 116 112 95 116 112 air
+/fill 97 116 112 97 116 112 air
+/fill 99 116 112 99 116 112 air
+/fill 101 116 112 101 116 112 air
+/fill 103 116 112 103 116 112 air
+/fill 105 116 112 105 116 112 air
+/fill 107 116 112 107 116 112 air
+/fill 109 116 112 109 116 112 air
+/fill 111 116 112 111 116 112 air
+
+/fill 88 115 89 88 117 111 obsidian
+/fill 88 116 90 88 116 90 air
+/fill 88 116 92 88 116 92 air
+/fill 88 116 94 88 116 94 air
+/fill 88 116 96 88 116 96 air
+/fill 88 116 98 88 116 98 air
+/fill 88 116 100 88 116 100 air
+/fill 88 116 102 88 116 102 air
+/fill 88 116 104 88 116 104 air
+/fill 88 116 106 88 116 106 air
+/fill 88 116 108 88 116 108 air
+/fill 88 116 110 88 116 110 air
+
+/fill 112 115 89 112 117 111 obsidian
+/fill 112 116 90 112 116 90 air
+/fill 112 116 92 112 116 92 air
+/fill 112 116 94 112 116 94 air
+/fill 112 116 96 112 116 96 air
+/fill 112 116 98 112 116 98 air
+/fill 112 116 100 112 116 100 air
+/fill 112 116 102 112 116 102 air
+/fill 112 116 104 112 116 104 air
+/fill 112 116 106 112 116 106 air
+/fill 112 116 108 112 116 108 air
+/fill 112 116 110 112 116 110 air
+
+# Вход в фундамент (арка)
+/fill 98 105 88 102 109 88 air
+/fill 98 110 88 102 110 88 obsidian
+/fill 99 110 88 101 110 88 air
+
+# ============================================
+# === ЧАСТЬ 2: КАМЕННЫЕ СТЕНЫ (Y=115-135) ===
+# ============================================
+
+# Основные стены из каменного кирпича
+/fill 90 115 90 110 135 110 stonebrick hollow
+/fill 92 115 92 108 135 108 air
+
+# Декоративные полосы из резного камня
+/fill 90 120 90 110 120 110 stonebrick 3
+/fill 92 120 92 108 120 108 air
+/fill 90 125 90 110 125 110 stonebrick 3
+/fill 92 125 92 108 125 108 air
+/fill 90 130 90 110 130 110 stonebrick 3
+/fill 92 130 92 108 130 108 air
+
+# Окна (высокие, готические)
+/fill 90 117 98 90 119 102 air
+/fill 110 117 98 110 119 102 air
+/fill 98 117 90 102 119 90 air
+/fill 98 117 110 102 119 110 air
+
+/fill 90 122 98 90 124 102 air
+/fill 110 122 98 110 124 102 air
+/fill 98 122 90 102 124 90 air
+/fill 98 122 110 102 124 110 air
+
+/fill 90 127 98 90 129 102 air
+/fill 110 127 98 110 129 102 air
+/fill 98 127 90 102 129 90 air
+/fill 98 127 110 102 129 110 air
+
+# Стеклянные панели в окнах
+/fill 90 117 99 90 119 101 glass_pane
+/fill 110 117 99 110 119 101 glass_pane
+/fill 99 117 90 101 119 90 glass_pane
+/fill 99 117 110 101 119 110 glass_pane
+
+/fill 90 122 99 90 124 101 glass_pane
+/fill 110 122 99 110 124 101 glass_pane
+/fill 99 122 90 101 124 90 glass_pane
+/fill 99 122 110 101 124 110 glass_pane
+
+/fill 90 127 99 90 129 101 glass_pane
+/fill 110 127 99 110 129 101 glass_pane
+/fill 99 127 90 101 129 90 glass_pane
+/fill 99 127 110 101 129 110 glass_pane
+
+# ============================================
+# === ЧАСТЬ 3: КРЫША (Y=136-150) ===
+# ============================================
+
+# Зубчатый парапет
+/fill 90 136 90 110 138 110 stonebrick hollow
+/fill 92 136 92 108 138 108 air
+
+# Зубцы парапета
+/fill 90 137 91 90 137 91 air
+/fill 90 137 93 90 137 93 air
+/fill 90 137 95 90 137 95 air
+/fill 90 137 97 90 137 97 air
+/fill 90 137 99 90 137 99 air
+/fill 90 137 101 90 137 101 air
+/fill 90 137 103 90 137 103 air
+/fill 90 137 105 90 137 105 air
+/fill 90 137 107 90 137 107 air
+/fill 90 137 109 90 137 109 air
+
+/fill 110 137 91 110 137 91 air
+/fill 110 137 93 110 137 93 air
+/fill 110 137 95 110 137 95 air
+/fill 110 137 97 110 137 97 air
+/fill 110 137 99 110 137 99 air
+/fill 110 137 101 110 137 101 air
+/fill 110 137 103 110 137 103 air
+/fill 110 137 105 110 137 105 air
+/fill 110 137 107 110 137 107 air
+/fill 110 137 109 110 137 109 air
+
+/fill 91 137 90 91 137 90 air
+/fill 93 137 90 93 137 90 air
+/fill 95 137 90 95 137 90 air
+/fill 97 137 90 97 137 90 air
+/fill 99 137 90 99 137 90 air
+/fill 101 137 90 101 137 90 air
+/fill 103 137 90 103 137 90 air
+/fill 105 137 90 105 137 90 air
+/fill 107 137 90 107 137 90 air
+/fill 109 137 90 109 137 90 air
+
+/fill 91 137 110 91 137 110 air
+/fill 93 137 110 93 137 110 air
+/fill 95 137 110 95 137 110 air
+/fill 97 137 110 97 137 110 air
+/fill 99 137 110 99 137 110 air
+/fill 101 137 110 101 137 110 air
+/fill 103 137 110 103 137 110 air
+/fill 105 137 110 105 137 110 air
+/fill 107 137 110 107 137 110 air
+/fill 109 137 110 109 137 110 air
+
+# Конусная крыша из тёмного дуба
+/fill 91 139 91 109 139 109 dark_oak_slab ["top_slot_bit"=false]
+/fill 92 140 92 108 140 108 dark_oak_planks
+/fill 93 141 93 107 141 107 dark_oak_slab ["top_slot_bit"=false]
+/fill 94 142 94 106 142 106 dark_oak_planks
+/fill 95 143 95 105 143 105 dark_oak_slab ["top_slot_bit"=false]
+/fill 96 144 96 104 144 104 dark_oak_planks
+/fill 97 145 97 103 145 103 dark_oak_slab ["top_slot_bit"=false]
+/fill 98 146 98 102 146 102 dark_oak_planks
+/fill 99 147 99 101 147 101 dark_oak_slab ["top_slot_bit"=false]
+/fill 100 148 100 100 150 100 dark_oak_fence
+
+# Флаг на вершине
+/setblock 100 151 100 standing_banner ["ground_sign_direction"=0]
+
+# ============================================
+# === ЧАСТЬ 4: ЛЕСТНИЦА (удобная, широкая) ===
+# ============================================
+
+# Лестничная шахта вдоль стены
+/fill 107 105 93 108 135 95 air
+
+# Лестничные ступени (oak_stairs) - поднимаемся по спирали вдоль стен
+
+# Этаж 1 → Этаж 2 (Y=105-115)
+/fill 93 105 107 95 105 108 oak_planks
+/setblock 93 106 107 oak_stairs ["weirdo_direction"=1]
+/setblock 93 106 108 oak_stairs ["weirdo_direction"=1]
+/setblock 94 107 107 oak_stairs ["weirdo_direction"=1]
+/setblock 94 107 108 oak_stairs ["weirdo_direction"=1]
+/setblock 95 108 107 oak_stairs ["weirdo_direction"=1]
+/setblock 95 108 108 oak_stairs ["weirdo_direction"=1]
+/setblock 96 109 107 oak_stairs ["weirdo_direction"=1]
+/setblock 96 109 108 oak_stairs ["weirdo_direction"=1]
+/setblock 97 110 107 oak_stairs ["weirdo_direction"=1]
+/setblock 97 110 108 oak_stairs ["weirdo_direction"=1]
+/setblock 98 111 107 oak_stairs ["weirdo_direction"=1]
+/setblock 98 111 108 oak_stairs ["weirdo_direction"=1]
+/setblock 99 112 107 oak_stairs ["weirdo_direction"=1]
+/setblock 99 112 108 oak_stairs ["weirdo_direction"=1]
+/setblock 100 113 107 oak_stairs ["weirdo_direction"=1]
+/setblock 100 113 108 oak_stairs ["weirdo_direction"=1]
+/setblock 101 114 107 oak_stairs ["weirdo_direction"=1]
+/setblock 101 114 108 oak_stairs ["weirdo_direction"=1]
+/fill 102 115 107 108 115 108 oak_planks
+
+# Этаж 2 → Этаж 3 (Y=115-125)
+/setblock 107 116 106 oak_stairs ["weirdo_direction"=2]
+/setblock 108 116 106 oak_stairs ["weirdo_direction"=2]
+/setblock 107 117 105 oak_stairs ["weirdo_direction"=2]
+/setblock 108 117 105 oak_stairs ["weirdo_direction"=2]
+/setblock 107 118 104 oak_stairs ["weirdo_direction"=2]
+/setblock 108 118 104 oak_stairs ["weirdo_direction"=2]
+/setblock 107 119 103 oak_stairs ["weirdo_direction"=2]
+/setblock 108 119 103 oak_stairs ["weirdo_direction"=2]
+/setblock 107 120 102 oak_stairs ["weirdo_direction"=2]
+/setblock 108 120 102 oak_stairs ["weirdo_direction"=2]
+/setblock 107 121 101 oak_stairs ["weirdo_direction"=2]
+/setblock 108 121 101 oak_stairs ["weirdo_direction"=2]
+/setblock 107 122 100 oak_stairs ["weirdo_direction"=2]
+/setblock 108 122 100 oak_stairs ["weirdo_direction"=2]
+/setblock 107 123 99 oak_stairs ["weirdo_direction"=2]
+/setblock 108 123 99 oak_stairs ["weirdo_direction"=2]
+/setblock 107 124 98 oak_stairs ["weirdo_direction"=2]
+/setblock 108 124 98 oak_stairs ["weirdo_direction"=2]
+/fill 107 125 93 108 125 97 oak_planks
+
+# Этаж 3 → Этаж 4 (Y=125-135)
+/setblock 106 126 93 oak_stairs ["weirdo_direction"=0]
+/setblock 106 126 92 oak_stairs ["weirdo_direction"=0]
+/setblock 105 127 93 oak_stairs ["weirdo_direction"=0]
+/setblock 105 127 92 oak_stairs ["weirdo_direction"=0]
+/setblock 104 128 93 oak_stairs ["weirdo_direction"=0]
+/setblock 104 128 92 oak_stairs ["weirdo_direction"=0]
+/setblock 103 129 93 oak_stairs ["weirdo_direction"=0]
+/setblock 103 129 92 oak_stairs ["weirdo_direction"=0]
+/setblock 102 130 93 oak_stairs ["weirdo_direction"=0]
+/setblock 102 130 92 oak_stairs ["weirdo_direction"=0]
+/setblock 101 131 93 oak_stairs ["weirdo_direction"=0]
+/setblock 101 131 92 oak_stairs ["weirdo_direction"=0]
+/setblock 100 132 93 oak_stairs ["weirdo_direction"=0]
+/setblock 100 132 92 oak_stairs ["weirdo_direction"=0]
+/setblock 99 133 93 oak_stairs ["weirdo_direction"=0]
+/setblock 99 133 92 oak_stairs ["weirdo_direction"=0]
+/setblock 98 134 93 oak_stairs ["weirdo_direction"=0]
+/setblock 98 134 92 oak_stairs ["weirdo_direction"=0]
+/fill 93 135 92 97 135 93 oak_planks
+
+# Перила лестницы
+/fill 93 106 106 101 114 106 oak_fence
+/fill 106 116 97 106 124 106 oak_fence
+/fill 97 126 94 106 134 94 oak_fence
+
+# ============================================
+# === ЧАСТЬ 5: ЭТАЖ 1 - ВХОДНОЙ ЗАЛ (Y=105-114) ===
+# ============================================
+
+# Пол
+/fill 93 105 93 107 105 107 polished_deepslate
+
+# Центральный узор
+/fill 98 105 98 102 105 102 gilded_blackstone
+
+# Ковровая дорожка от входа
+/fill 100 106 89 100 106 97 red_carpet
+
+# Колонны
+/fill 94 106 94 94 113 94 quartz_pillar
+/fill 106 106 94 106 113 94 quartz_pillar
+/fill 94 106 106 94 113 106 quartz_pillar
+/fill 106 106 106 106 113 106 quartz_pillar
+
+# Капители колонн
+/setblock 94 113 94 quartz_block 2
+/setblock 106 113 94 quartz_block 2
+/setblock 94 113 106 quartz_block 2
+/setblock 106 113 106 quartz_block 2
+
+# Баннеры у входа
+/setblock 96 110 89 wall_banner ["facing_direction"=2]
+/setblock 104 110 89 wall_banner ["facing_direction"=2]
+
+# Факелы
+/setblock 95 110 94 torch
+/setblock 105 110 94 torch
+/setblock 95 110 106 torch
+/setblock 105 110 106 torch
+
+# Цветочные горшки
+/setblock 93 106 93 flower_pot
+/setblock 107 106 93 flower_pot
+/setblock 93 106 107 flower_pot
+/setblock 107 106 107 flower_pot
+
+# Скамейки для ожидания
+/setblock 94 106 98 oak_stairs ["weirdo_direction"=1]
+/setblock 94 106 99 oak_stairs ["weirdo_direction"=1]
+/setblock 94 106 101 oak_stairs ["weirdo_direction"=1]
+/setblock 94 106 102 oak_stairs ["weirdo_direction"=1]
+
+# Люстра
+/fill 100 113 100 100 111 100 chain
+/setblock 100 110 100 lantern ["hanging"=true]
+
+# ============================================
+# === ЧАСТЬ 6: ЭТАЖ 2 - ГОСТИНАЯ (Y=115-124) ===
+# ============================================
+
+# Пол
+/fill 93 115 93 106 115 106 oak_planks
+
+# Потолок/пол следующего этажа
+/fill 93 125 93 106 125 106 oak_planks
+
+# Камин
+/fill 93 116 98 93 119 102 stonebrick
+/fill 93 116 99 93 118 101 air
+/setblock 94 116 100 campfire
+/fill 93 119 99 93 119 101 air
+
+# Каминная полка
+/fill 93 120 98 93 120 102 oak_slab
+
+# Диваны у камина
+/setblock 96 116 99 oak_stairs ["weirdo_direction"=0]
+/setblock 96 116 100 oak_stairs ["weirdo_direction"=0]
+/setblock 96 116 101 oak_stairs ["weirdo_direction"=0]
+
+# Кресло
+/setblock 97 116 98 oak_stairs ["weirdo_direction"=3]
+
+# Столик
+/setblock 98 116 100 oak_fence
+/setblock 98 117 100 oak_pressure_plate
+
+# Книжные полки
+/fill 106 116 94 106 119 97 bookshelf
+/fill 106 116 103 106 119 106 bookshelf
+
+# Ковёр
+/fill 97 116 98 102 116 102 brown_carpet
+
+# Картины (рамки)
+/setblock 93 118 95 frame
+/setblock 93 118 105 frame
+
+# Свечи на столике
+/setblock 98 118 100 candle ["candles"=3,"lit"=true]
+
+# Люстра
+/setblock 100 124 100 lantern ["hanging"=true]
+
+# ============================================
+# === ЧАСТЬ 7: ЭТАЖ 3 - СПАЛЬНЯ (Y=125-134) ===
+# ============================================
+
+# Пол (ковёр по всей комнате)
+/fill 93 126 93 106 126 106 white_carpet
+
+# Кровать (двуспальная)
+/setblock 95 126 104 bed ["head_piece_bit"=false,"direction"=2]
+/setblock 95 126 105 bed ["head_piece_bit"=true,"direction"=2]
+/setblock 96 126 104 bed ["head_piece_bit"=false,"direction"=2]
+/setblock 96 126 105 bed ["head_piece_bit"=true,"direction"=2]
+
+# Тумбочки
+/setblock 94 126 104 oak_trapdoor ["open_bit"=true,"direction"=1]
+/setblock 97 126 104 oak_trapdoor ["open_bit"=true,"direction"=0]
+/setblock 94 127 104 flower_pot
+/setblock 97 127 104 candle ["candles"=1,"lit"=true]
+
+# Шкаф (сундуки и двери)
+/setblock 93 126 94 chest ["facing_direction"=5]
+/setblock 93 127 94 chest ["facing_direction"=5]
+/setblock 93 126 95 chest ["facing_direction"=5]
+/setblock 93 127 95 chest ["facing_direction"=5]
+
+# Туалетный столик
+/setblock 105 126 94 oak_slab
+/setblock 106 126 94 oak_slab
+/setblock 105 126 95 oak_stairs ["weirdo_direction"=3]
+
+# Зеркало (стекло)
+/setblock 106 128 94 glass
+
+# Письменный стол
+/setblock 105 126 105 dark_oak_slab
+/setblock 106 126 105 dark_oak_slab
+/setblock 106 126 106 dark_oak_slab
+
+# Стул
+/setblock 104 126 105 oak_stairs ["weirdo_direction"=1]
+
+# Книга на столе
+/setblock 105 127 106 lectern
+
+# Свечи
+/setblock 106 127 105 candle ["candles"=2,"lit"=true]
+
+# Люстра
+/setblock 100 134 100 lantern ["hanging"=true]
+
+# ============================================
+# === ЧАСТЬ 8: ЭТАЖ 4 - СМОТРОВАЯ ПЛОЩАДКА (Y=135-138) ===
+# ============================================
+
+# Пол площадки
+/fill 92 136 92 108 136 108 oak_planks
+
+# Стол с картами
+/setblock 99 137 100 cartography_table
+/setblock 100 137 100 oak_slab
+/setblock 101 137 100 oak_slab
+
+# Стулья
+/setblock 99 137 99 oak_stairs ["weirdo_direction"=3]
+/setblock 101 137 99 oak_stairs ["weirdo_direction"=3]
+
+# Подзорные трубы (end rod)
+/setblock 92 137 100 end_rod ["facing_direction"=4]
+/setblock 108 137 100 end_rod ["facing_direction"=5]
+/setblock 100 137 92 end_rod ["facing_direction"=2]
+/setblock 100 137 108 end_rod ["facing_direction"=3]
+
+# Сундук с припасами
+/setblock 93 137 93 chest ["facing_direction"=3]
+
+# Факелы по углам
+/setblock 92 137 92 lantern
+/setblock 108 137 92 lantern
+/setblock 92 137 108 lantern
+/setblock 108 137 108 lantern
+
+# ============================================
+# === ЧАСТЬ 9: УГЛОВЫЕ БАШЕНКИ (внутри) ===
+# ============================================
+
+# Северо-западная башенка - оружейная
+/fill 87 105 87 88 105 88 stone
+/setblock 87 106 87 armor_stand
+/setblock 88 106 87 chest ["facing_direction"=3]
+/setblock 87 106 88 oak_fence
+
+# Северо-восточная башенка - кладовая
+/fill 112 105 87 113 105 88 stone
+/setblock 112 106 87 barrel ["facing_direction"=1]
+/setblock 113 106 87 barrel ["facing_direction"=1]
+/setblock 112 106 88 chest ["facing_direction"=3]
+
+# Юго-западная башенка - молельня
+/fill 87 105 112 88 105 113 stone
+/setblock 87 106 112 candle ["candles"=4,"lit"=true]
+/setblock 88 106 113 lectern
+
+# Юго-восточная башенка - сокровищница
+/fill 112 105 112 113 105 113 gold_block
+/setblock 112 106 112 chest ["facing_direction"=2]
+/setblock 113 106 113 chest ["facing_direction"=2]
+
+# Факелы в башенках
+/setblock 87 108 87 torch
+/setblock 112 108 87 torch
+/setblock 87 108 112 torch
+/setblock 112 108 112 torch
+
+# ============================================
+# === ЧАСТЬ 10: ВНЕШНЕЕ ОСВЕЩЕНИЕ ===
+# ============================================
+
+# Факелы на зубцах фундамента
+/setblock 88 118 88 torch
+/setblock 112 118 88 torch
+/setblock 88 118 112 torch
+/setblock 112 118 112 torch
+
+# Фонари у входа
+/setblock 97 111 87 lantern ["hanging"=true]
+/setblock 103 111 87 lantern ["hanging"=true]
+
+# Фонари на угловых башенках
+/setblock 86 115 86 soul_lantern
+/setblock 114 115 86 soul_lantern
+/setblock 86 115 114 soul_lantern
+/setblock 114 115 114 soul_lantern
