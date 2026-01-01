@@ -36,23 +36,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut enigo = Enigo::new(&Settings::default())?;
     let mut clipboard = Clipboard::new()?;
     for (i, command) in commands.iter().enumerate() {
-
-        thread::sleep(Duration::from_millis(500));
+        thread::sleep(Duration::from_millis(250));
         println!("[{}/{}] {}", i + 1, commands.len(), command);
         clipboard.set_text(command)?;
-
         enigo.key(Key::Unicode('t'), Click)?;
-
-        thread::sleep(Duration::from_millis(600));
-
+        thread::sleep(Duration::from_millis(400));
         enigo.key(Key::Meta, Press)?;
-        thread::sleep(Duration::from_millis(100));
+        thread::sleep(Duration::from_millis(50));
         enigo.key(Key::Unicode('v'), Click)?;
-        thread::sleep(Duration::from_millis(100));
+        thread::sleep(Duration::from_millis(50));
         enigo.key(Key::Meta, Release)?;
-        thread::sleep(Duration::from_millis(200));
+        thread::sleep(Duration::from_millis(100));
         enigo.key(Key::Return, Click)?;
-        thread::sleep(Duration::from_millis(200));
+        thread::sleep(Duration::from_millis(100));
     }
     println!();
     println!("✅ Готово! Выполнено команд: {}", commands.len());
