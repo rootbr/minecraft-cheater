@@ -35,7 +35,7 @@ const FLIGHT_HEIGHT: i32 = 6; // steps per flight
 const WIDTH: i32 = 2; // width of flight
 const WALL_MATERIAL: Option<&str> = Some("spark:brown_decorative_tile"); // None = no walls
 const LANTERN: Option<&str> = Some("sea_lantern"); // None = no lanterns
-const LANTERN_INTERVAL: i32 = 3; // lantern every N steps
+const LANTERN_INTERVAL: i32 = 2; // lantern every N steps
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();

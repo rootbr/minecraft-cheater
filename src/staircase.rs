@@ -9,7 +9,6 @@ pub struct StaircaseConfig<'a> {
     pub z: i32,
     pub flight_height: i32,
     pub width: i32,                    // width of flight (default 2)
-    pub num_flights: i32,              // number of flight pairs (up + down) (default 1)
     pub wall_material: Option<&'a str>, // None = no walls
     pub lantern: Option<&'a str>,      // None = no lanterns
     pub lantern_interval: i32,         // every N steps (default 3)
