@@ -160,8 +160,9 @@ python3 grabcraft_to_commands.py <URL> --no-fill
 
 - **Лестницы**: `["facing_direction"=число]` вместо `[facing=направление]`
   - 2 = север, 3 = юг, 4 = запад, 5 = восток
-- **Ступеньки**: `["upside_down_bit"=бит,"weirdo_direction"=число]`
-  - upside_down_bit: 0 = нормально, 1 = перевёрнуто
+- **Ступеньки**: `["upside_down_bit"=boolean,"weirdo_direction"=число]`
+  - upside_down_bit: `false` = нормально, `true` = перевёрнуто
   - weirdo_direction: 0 = запад, 1 = восток, 2 = север, 3 = юг
+  - Поддерживаются: oak_stairs, cobblestone_stairs, stone_brick_stairs
 - **Факелы на стенах**: `["facing_direction"=число]`
 - **Сундуки**: `["facing_direction"=число]`
