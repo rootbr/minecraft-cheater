@@ -218,38 +218,217 @@ def can_use_fill(material: str) -> bool:
 
 
 def find_fill_regions(blocks: list[dict]) -> tuple[list[tuple], set]:
-    """Find regions of same material that can use /fill command."""
-    by_material_y = defaultdict(list)
+    """
+    Find regions of same material that can use /fill command.
+    Optimizes in order: 3D cuboids -> 2D rectangles -> 1D lines -> vertical columns
+    """
+    # Group blocks by material
+    by_material = defaultdict(list)
     for b in blocks:
         if can_use_fill(b['material']):
-            key = (b['material'], b['y'])
-            by_material_y[key].append((b['x'], b['z']))
+            by_material[b['material']].append((b['x'], b['y'], b['z']))
 
     fill_regions = []
     used_blocks = set()
 
-    for (material, y), coords in by_material_y.items():
-        by_z = defaultdict(list)
-        for x, z in coords:
-            by_z[z].append(x)
+    for material, coords in by_material.items():
+        remaining = set(coords) - used_blocks
 
-        for z, x_list in by_z.items():
-            x_list.sort()
-            i = 0
-            while i < len(x_list):
-                start_x = x_list[i]
-                end_x = start_x
-                while i + 1 < len(x_list) and x_list[i + 1] == end_x + 1:
-                    i += 1
-                    end_x = x_list[i]
+        # Try to find 3D cuboids (at least 2x2x2)
+        remaining = find_cuboids(material, remaining, fill_regions, used_blocks)
 
-                if end_x > start_x:
-                    fill_regions.append((start_x, y, z, end_x, y, z, material))
-                    for x in range(start_x, end_x + 1):
-                        used_blocks.add((x, y, z, material))
-                i += 1
+        # Try to find 2D rectangles on same Y level (at least 2x2)
+        remaining = find_rectangles(material, remaining, fill_regions, used_blocks)
+
+        # Try to find 1D horizontal lines (at least 2 blocks)
+        remaining = find_horizontal_lines(material, remaining, fill_regions, used_blocks)
+
+        # Try to find vertical columns (at least 2 blocks)
+        remaining = find_vertical_columns(material, remaining, fill_regions, used_blocks)
 
     return fill_regions, used_blocks
+
+
+def find_cuboids(material: str, coords: set, fill_regions: list, used_blocks: set) -> set:
+    """Find 3D cuboid regions."""
+    remaining = coords.copy()
+    coords_list = sorted(remaining)
+
+    for x, y, z in coords_list:
+        if (x, y, z) not in remaining:
+            continue
+
+        # Try to expand in all directions
+        max_x = x
+        max_y = y
+        max_z = z
+
+        # Find max X extent at this Y, Z
+        while (max_x + 1, y, z) in remaining:
+            max_x += 1
+
+        # Find max Z extent for this X range at this Y
+        can_expand_z = True
+        while can_expand_z and (x, y, max_z + 1) in remaining:
+            # Check if entire X range exists at next Z
+            for check_x in range(x, max_x + 1):
+                if (check_x, y, max_z + 1) not in remaining:
+                    can_expand_z = False
+                    break
+            if can_expand_z:
+                max_z += 1
+
+        # Find max Y extent for this XZ rectangle
+        can_expand_y = True
+        while can_expand_y and (x, max_y + 1, z) in remaining:
+            # Check if entire XZ rectangle exists at next Y
+            for check_x in range(x, max_x + 1):
+                for check_z in range(z, max_z + 1):
+                    if (check_x, max_y + 1, check_z) not in remaining:
+                        can_expand_y = False
+                        break
+                if not can_expand_y:
+                    break
+            if can_expand_y:
+                max_y += 1
+
+        # Only create cuboid if it's at least 2x2x2
+        volume = (max_x - x + 1) * (max_y - y + 1) * (max_z - z + 1)
+        if volume >= 8:  # At least 2x2x2
+            fill_regions.append((x, y, z, max_x, max_y, max_z, material))
+            for rx in range(x, max_x + 1):
+                for ry in range(y, max_y + 1):
+                    for rz in range(z, max_z + 1):
+                        remaining.discard((rx, ry, rz))
+                        used_blocks.add((rx, ry, rz, material))
+
+    return remaining
+
+
+def find_rectangles(material: str, coords: set, fill_regions: list, used_blocks: set) -> set:
+    """Find 2D rectangular regions on same Y level."""
+    remaining = coords.copy()
+
+    # Group by Y level
+    by_y = defaultdict(list)
+    for x, y, z in remaining:
+        by_y[y].append((x, z))
+
+    for y, xz_coords in by_y.items():
+        xz_set = set(xz_coords)
+        xz_sorted = sorted(xz_set)
+
+        for x, z in xz_sorted:
+            if (x, z) not in xz_set:
+                continue
+
+            # Find max X extent at this Z
+            max_x = x
+            while (max_x + 1, z) in xz_set:
+                max_x += 1
+
+            # Find max Z extent for this X range
+            max_z = z
+            can_expand = True
+            while can_expand:
+                max_z += 1
+                for check_x in range(x, max_x + 1):
+                    if (check_x, max_z) not in xz_set:
+                        can_expand = False
+                        max_z -= 1
+                        break
+
+            # Only create rectangle if it's at least 2x2
+            area = (max_x - x + 1) * (max_z - z + 1)
+            if area >= 4:
+                fill_regions.append((x, y, z, max_x, y, max_z, material))
+                for rx in range(x, max_x + 1):
+                    for rz in range(z, max_z + 1):
+                        xz_set.discard((rx, rz))
+                        remaining.discard((rx, y, rz))
+                        used_blocks.add((rx, y, rz, material))
+
+    return remaining
+
+
+def find_horizontal_lines(material: str, coords: set, fill_regions: list, used_blocks: set) -> set:
+    """Find horizontal lines along X or Z axis."""
+    remaining = coords.copy()
+
+    # Group by Y and Z for X-direction lines
+    by_yz = defaultdict(list)
+    for x, y, z in remaining:
+        by_yz[(y, z)].append(x)
+
+    for (y, z), x_list in by_yz.items():
+        x_list.sort()
+        i = 0
+        while i < len(x_list):
+            start_x = x_list[i]
+            end_x = start_x
+            while i + 1 < len(x_list) and x_list[i + 1] == end_x + 1:
+                i += 1
+                end_x = x_list[i]
+
+            if end_x > start_x:
+                fill_regions.append((start_x, y, z, end_x, y, z, material))
+                for x in range(start_x, end_x + 1):
+                    remaining.discard((x, y, z))
+                    used_blocks.add((x, y, z, material))
+            i += 1
+
+    # Group by Y and X for Z-direction lines
+    by_yx = defaultdict(list)
+    for x, y, z in remaining:
+        by_yx[(y, x)].append(z)
+
+    for (y, x), z_list in by_yx.items():
+        z_list.sort()
+        i = 0
+        while i < len(z_list):
+            start_z = z_list[i]
+            end_z = start_z
+            while i + 1 < len(z_list) and z_list[i + 1] == end_z + 1:
+                i += 1
+                end_z = z_list[i]
+
+            if end_z > start_z:
+                fill_regions.append((x, y, start_z, x, y, end_z, material))
+                for z in range(start_z, end_z + 1):
+                    remaining.discard((x, y, z))
+                    used_blocks.add((x, y, z, material))
+            i += 1
+
+    return remaining
+
+
+def find_vertical_columns(material: str, coords: set, fill_regions: list, used_blocks: set) -> set:
+    """Find vertical columns along Y axis."""
+    remaining = coords.copy()
+
+    # Group by X and Z for Y-direction columns
+    by_xz = defaultdict(list)
+    for x, y, z in remaining:
+        by_xz[(x, z)].append(y)
+
+    for (x, z), y_list in by_xz.items():
+        y_list.sort()
+        i = 0
+        while i < len(y_list):
+            start_y = y_list[i]
+            end_y = start_y
+            while i + 1 < len(y_list) and y_list[i + 1] == end_y + 1:
+                i += 1
+                end_y = y_list[i]
+
+            if end_y > start_y:
+                fill_regions.append((x, start_y, z, x, end_y, z, material))
+                for y in range(start_y, end_y + 1):
+                    remaining.discard((x, y, z))
+                    used_blocks.add((x, y, z, material))
+            i += 1
+
+    return remaining
 
 
 def is_attachable_block(material: str) -> bool:

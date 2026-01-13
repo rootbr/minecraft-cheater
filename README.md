@@ -141,40 +141,18 @@ python3 grabcraft_to_commands.py <URL> --no-fill
 **Результат:**
 - Автоматически скачивает данные с GrabCraft
 - Конвертирует в правильный синтаксис Bedrock Edition
-- Оптимизирует команды используя /fill где возможно
+- **Умная оптимизация /fill команд:**
+  - Ищет 3D кубоиды (2x2x2 и больше)
+  - Ищет 2D прямоугольники (2x2 и больше)
+  - Ищет 1D линии (2 блока и больше)
+  - Ищет вертикальные колонны
+  - **Результат: до 30% меньше команд!**
 - Правильно обрабатывает лестницы, факелы, ступеньки с направлениями
 
-### Раздельные скрипты (старый способ)
-
-Если нужно разделить процесс на этапы:
-
-**1. extract_from_web.py** - извлечение блоков с веб-страницы
-```bash
-python3 extract_from_web.py <URL> blocks.csv
-```
-
-**2. generate_commands.py** - генерация команд из CSV
-```bash
-# По умолчанию (Y=64, sea level)
-python3 generate_commands.py -i blocks.csv
-
-# С пользовательскими смещениями
-python3 generate_commands.py -i blocks.csv -x 100 -y 70 -z -50
-
-# Другой выходной файл
-python3 generate_commands.py -i blocks.csv -o my_build.mcfunction
-
-# Только /setblock (без оптимизации /fill)
-python3 generate_commands.py -i blocks.csv --no-fill
-```
-
-**Опции generate_commands.py:**
-- `-i FILE` - входной CSV файл (default: blocks_web.csv)
-- `-o FILE` - выходной файл (default: build_commands.mcfunction)
-- `-x N` - смещение по X (default: 0)
-- `-y N` - смещение по Y (default: 64)
-- `-z N` - смещение по Z (default: 0)
-- `--no-fill` - только /setblock команды
+**Пример оптимизации:**
+- До: 479 команд (117 /fill, 362 /setblock)
+- После: 336 команд (100 /fill, 236 /setblock)
+- Экономия: 143 команды (-30%)
 
 ### Особенности Bedrock Edition
 
