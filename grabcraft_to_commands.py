@@ -19,11 +19,56 @@ from urllib.request import urlopen, Request
 MATERIAL_TO_BLOCK = {
     # Basic blocks
     'Stone Bricks': 'minecraft:stone_bricks',
+    'Stone': 'minecraft:stone',
     'Cobblestone': 'minecraft:cobblestone',
     'Grass': 'minecraft:grass_block',
+    'Dirt': 'minecraft:dirt',
     'Oak Wood': 'minecraft:oak_log',
     'Oak Wood Plank': 'minecraft:oak_planks',
+    'Spruce Wood': 'minecraft:spruce_log',
     'Iron Block': 'minecraft:iron_block',
+    'Glowstone': 'minecraft:glowstone',
+
+    # Wool
+    'White Wool': 'minecraft:white_wool',
+    'Black Wool': 'minecraft:black_wool',
+    'Gray Wool': 'minecraft:gray_wool',
+    'Light Gray Wool': 'minecraft:light_gray_wool',
+    'Brown Wool': 'minecraft:brown_wool',
+    'Red Wool': 'minecraft:red_wool',
+    'Orange Wool': 'minecraft:orange_wool',
+    'Yellow Wool': 'minecraft:yellow_wool',
+    'Lime Wool': 'minecraft:lime_wool',
+    'Green Wool': 'minecraft:green_wool',
+    'Cyan Wool': 'minecraft:cyan_wool',
+    'Light Blue Wool': 'minecraft:light_blue_wool',
+    'Blue Wool': 'minecraft:blue_wool',
+    'Purple Wool': 'minecraft:purple_wool',
+    'Magenta Wool': 'minecraft:magenta_wool',
+    'Pink Wool': 'minecraft:pink_wool',
+
+    # Fences
+    'Oak Fence': 'minecraft:oak_fence',
+    'Spruce Fence': 'minecraft:spruce_fence',
+    'Birch Fence': 'minecraft:birch_fence',
+    'Jungle Fence': 'minecraft:jungle_fence',
+    'Acacia Fence': 'minecraft:acacia_fence',
+    'Dark Oak Fence': 'minecraft:dark_oak_fence',
+
+    # Slabs (Bedrock: top_slot_bit determines position)
+    'Stone Slab': 'minecraft:stone_slab["minecraft:vertical_half"="bottom"]',
+    'Stone Brick Slab': 'minecraft:stone_brick_slab["minecraft:vertical_half"="bottom"]',
+    'Cobblestone Slab': 'minecraft:cobblestone_slab["minecraft:vertical_half"="bottom"]',
+    'Wooden Slab': 'minecraft:oak_slab["minecraft:vertical_half"="bottom"]',
+    'Oak Slab': 'minecraft:oak_slab["minecraft:vertical_half"="bottom"]',
+    'Spruce Slab': 'minecraft:spruce_slab["minecraft:vertical_half"="bottom"]',
+    'Birch Slab': 'minecraft:birch_slab["minecraft:vertical_half"="bottom"]',
+
+    # Double Slabs (full blocks made from slabs)
+    'Double Stone Slab': 'minecraft:smooth_stone',
+    'Double Stone Brick Slab': 'minecraft:stone_bricks',
+    'Double Cobblestone Slab': 'minecraft:cobblestone',
+    'Double Wooden Slab': 'minecraft:oak_planks',
 
     # Chests (Bedrock Edition uses numeric facing_direction)
     'Chest (North)': 'minecraft:chest["facing_direction"=2]',

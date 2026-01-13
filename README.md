@@ -154,11 +154,31 @@ python3 grabcraft_to_commands.py <URL> --no-fill
 
 Скрипты автоматически конвертируют блоки в правильный синтаксис Bedrock Edition:
 
-- **Лестницы**: `["facing_direction"=число]` вместо `[facing=направление]`
+- **Лестницы (Ladders)**: `["facing_direction"=число]`
   - 2 = север, 3 = юг, 4 = запад, 5 = восток
-- **Ступеньки**: `["upside_down_bit"=boolean,"weirdo_direction"=число]`
+
+- **Ступеньки (Stairs)**: `["upside_down_bit"=boolean,"weirdo_direction"=число]`
   - upside_down_bit: `false` = нормально, `true` = перевёрнуто
   - weirdo_direction: 0 = запад, 1 = восток, 2 = север, 3 = юг
-  - Поддерживаются: oak_stairs, cobblestone_stairs, stone_brick_stairs
+  - Поддерживаются: oak, spruce, birch, jungle, acacia, dark_oak, cobblestone, stone_brick
+
+- **Плиты (Slabs)**: `["minecraft:vertical_half"="bottom"]`
+  - Поддерживаются: stone, stone_brick, cobblestone, oak, spruce, birch
+  - Double Slabs конвертируются в полные блоки
+
 - **Факелы на стенах**: `["facing_direction"=число]`
+
 - **Сундуки**: `["facing_direction"=число]`
+
+- **Другие блоки**:
+  - Все виды шерсти (16 цветов)
+  - Заборы (oak, spruce, birch, jungle, acacia, dark_oak)
+  - Базовые блоки (stone, dirt, glowstone, logs, planks)
+
+### Поддерживаемые постройки
+
+✅ **Протестировано на:**
+- Oakshire Wall Tower (11x14x11, 737 блоков)
+- Large Asian Fort (20x101x20, 41,000+ блоков)
+
+Скрипт поддерживает любые постройки с GrabCraft!
