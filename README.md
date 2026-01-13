@@ -92,3 +92,98 @@ fill 0 65 0 10 65 10 grass_block
 **Прервалось на середине:**
 - Посмотри номер последней команды
 - Запусти с `-k <номер>` чтобы пропустить уже выполненные
+
+
+## Генерация команд из GrabCraft
+
+### Полный рабочий процесс
+
+1. Найди постройку на [GrabCraft](https://www.grabcraft.com)
+2. Скопируй URL страницы
+3. Сгенерируй команды:
+   ```bash
+   python3 grabcraft_to_commands.py <URL> -y 70
+   ```
+4. Выполни команды в игре:
+   ```bash
+   ./target/release/mc-commander -f build_commands.mcfunction
+   ```
+
+### Быстрый старт (один скрипт)
+
+**grabcraft_to_commands.py** - конвертирует ссылку GrabCraft напрямую в команды Minecraft Bedrock Edition.
+
+```bash
+# Простое использование - просто дай ссылку
+python3 grabcraft_to_commands.py https://www.grabcraft.com/minecraft/tower/...
+
+# С пользовательскими координатами
+python3 grabcraft_to_commands.py <URL> -x 100 -y 70 -z -50
+
+# Другой выходной файл
+python3 grabcraft_to_commands.py <URL> -o my_tower.mcfunction
+
+# Сохранить CSV блоков для анализа
+python3 grabcraft_to_commands.py <URL> --save-csv blocks.csv
+
+# Только /setblock команды (без оптимизации /fill)
+python3 grabcraft_to_commands.py <URL> --no-fill
+```
+
+**Опции:**
+- `-o FILE` - выходной файл (default: build_commands.mcfunction)
+- `-x N` - смещение по X (default: 0)
+- `-y N` - смещение по Y (default: 64 - уровень моря)
+- `-z N` - смещение по Z (default: 0)
+- `--no-fill` - использовать только /setblock команды
+- `--save-csv [FILE]` - сохранить блоки в CSV файл
+
+**Результат:**
+- Автоматически скачивает данные с GrabCraft
+- Конвертирует в правильный синтаксис Bedrock Edition
+- Оптимизирует команды используя /fill где возможно
+- Правильно обрабатывает лестницы, факелы, ступеньки с направлениями
+
+### Раздельные скрипты (старый способ)
+
+Если нужно разделить процесс на этапы:
+
+**1. extract_from_web.py** - извлечение блоков с веб-страницы
+```bash
+python3 extract_from_web.py <URL> blocks.csv
+```
+
+**2. generate_commands.py** - генерация команд из CSV
+```bash
+# По умолчанию (Y=64, sea level)
+python3 generate_commands.py -i blocks.csv
+
+# С пользовательскими смещениями
+python3 generate_commands.py -i blocks.csv -x 100 -y 70 -z -50
+
+# Другой выходной файл
+python3 generate_commands.py -i blocks.csv -o my_build.mcfunction
+
+# Только /setblock (без оптимизации /fill)
+python3 generate_commands.py -i blocks.csv --no-fill
+```
+
+**Опции generate_commands.py:**
+- `-i FILE` - входной CSV файл (default: blocks_web.csv)
+- `-o FILE` - выходной файл (default: build_commands.mcfunction)
+- `-x N` - смещение по X (default: 0)
+- `-y N` - смещение по Y (default: 64)
+- `-z N` - смещение по Z (default: 0)
+- `--no-fill` - только /setblock команды
+
+### Особенности Bedrock Edition
+
+Скрипты автоматически конвертируют блоки в правильный синтаксис Bedrock Edition:
+
+- **Лестницы**: `["facing_direction"=число]` вместо `[facing=направление]`
+  - 2 = север, 3 = юг, 4 = запад, 5 = восток
+- **Ступеньки**: `["upside_down_bit"=бит,"weirdo_direction"=число]`
+  - upside_down_bit: 0 = нормально, 1 = перевёрнуто
+  - weirdo_direction: 0 = запад, 1 = восток, 2 = север, 3 = юг
+- **Факелы на стенах**: `["facing_direction"=число]`
+- **Сундуки**: `["facing_direction"=число]`
