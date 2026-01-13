@@ -96,16 +96,31 @@ def load_blocks(csv_path: str) -> list[dict]:
     return blocks
 
 
+def can_use_fill(material: str) -> bool:
+    """Check if material can be used with /fill command."""
+    block_id = get_block_id(material)
+    # Blocks with state parameters can't be used with /fill reliably
+    if '[' in block_id:
+        return False
+    # Some blocks need adjacent blocks to place
+    no_fill_blocks = ['ladder', 'torch', 'wall_torch', 'chest']
+    for b in no_fill_blocks:
+        if b in block_id:
+            return False
+    return True
+
+
 def find_fill_regions(blocks: list[dict]) -> list[tuple]:
     """
     Find regions of same material that can use /fill command.
     Returns list of (x1, y1, z1, x2, y2, z2, material) tuples.
     """
-    # Group blocks by material and y-level
+    # Group blocks by material and y-level (only for fillable materials)
     by_material_y = defaultdict(list)
     for b in blocks:
-        key = (b['material'], b['y'])
-        by_material_y[key].append((b['x'], b['z']))
+        if can_use_fill(b['material']):
+            key = (b['material'], b['y'])
+            by_material_y[key].append((b['x'], b['z']))
 
     fill_regions = []
     used_blocks = set()
@@ -138,10 +153,21 @@ def find_fill_regions(blocks: list[dict]) -> list[tuple]:
     return fill_regions, used_blocks
 
 
+def is_attachable_block(material: str) -> bool:
+    """Check if block needs to be attached to another block."""
+    block_id = get_block_id(material)
+    attachable = ['ladder', 'torch', 'wall_torch']
+    for b in attachable:
+        if b in block_id:
+            return True
+    return False
+
+
 def generate_commands(blocks: list[dict], offset_x: int = 0, offset_y: int = 64,
                       offset_z: int = 0, use_fill: bool = True) -> list[str]:
     """Generate Minecraft commands for all blocks."""
     commands = []
+    attachable_commands = []  # Commands for blocks that need walls first
 
     if use_fill:
         fill_regions, used_blocks = find_fill_regions(blocks)
@@ -160,14 +186,23 @@ def generate_commands(blocks: list[dict], offset_x: int = 0, offset_y: int = 64,
                 block_id = get_block_id(b['material'])
                 cmd = f'/setblock {b["x"] + offset_x} {b["y"] + offset_y} ' \
                       f'{b["z"] + offset_z} {block_id}'
-                commands.append(cmd)
+                if is_attachable_block(b['material']):
+                    attachable_commands.append(cmd)
+                else:
+                    commands.append(cmd)
     else:
         # Simple mode: only /setblock
         for b in blocks:
             block_id = get_block_id(b['material'])
             cmd = f'/setblock {b["x"] + offset_x} {b["y"] + offset_y} ' \
                   f'{b["z"] + offset_z} {block_id}'
-            commands.append(cmd)
+            if is_attachable_block(b['material']):
+                attachable_commands.append(cmd)
+            else:
+                commands.append(cmd)
+
+    # Add attachable blocks at the end (after walls are placed)
+    commands.extend(attachable_commands)
 
     return commands
 
