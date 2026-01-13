@@ -17,6 +17,10 @@ use std::time::Duration;
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
+
+    /// Skip first N commands (useful if execution was interrupted)
+    #[arg(short, long, default_value_t = 0)]
+    skip: usize,
 }
 
 #[derive(Subcommand)]
@@ -78,8 +82,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
+    // Apply skip
+    let skip_count = cli.skip;
+    let commands_to_execute: Vec<String> = if skip_count > 0 {
+        if skip_count >= commands.len() {
+            println!("Skip count ({}) >= total commands ({}). Nothing to execute.", skip_count, commands.len());
+            return Ok(());
+        }
+        println!("Пропускаю первые {} команд...", skip_count);
+        commands.into_iter().skip(skip_count).collect()
+    } else {
+        commands
+    };
+
+    let total_commands = commands_to_execute.len();
+    println!("Команд к выполнению: {} (начиная с #{})", total_commands, skip_count + 1);
+
     let delay_before_start = 5;
-    println!("У тебя {} секунд чтобы:", delay_before_start);
+    println!("\nУ тебя {} секунд чтобы:", delay_before_start);
     println!("   1. Переключиться на Parallels Desktop");
     println!("   2. Кликнуть в окно Minecraft");
     println!("   3. Убедиться что чат закрыт (нажми Esc)");
@@ -92,9 +112,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut enigo = Enigo::new(&Settings::default())?;
     let mut clipboard = Clipboard::new()?;
 
-    for (i, command) in commands.iter().enumerate() {
+    for (i, command) in commands_to_execute.iter().enumerate() {
         thread::sleep(Duration::from_millis(500));
-        println!("[{}/{}] {}", i + 1, commands.len(), command);
+        let actual_index = skip_count + i + 1;
+        println!("[{}/{}] {}", actual_index, skip_count + total_commands, command);
         clipboard.set_text(command)?;
 
         enigo.key(Key::Unicode('t'), Click)?;
@@ -111,6 +132,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     println!();
-    println!("Готово! Выполнено команд: {}", commands.len());
+    println!("Готово! Выполнено команд: {} (с {} по {})",
+             total_commands, skip_count + 1, skip_count + total_commands);
     Ok(())
 }

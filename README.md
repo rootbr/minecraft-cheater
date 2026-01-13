@@ -28,27 +28,23 @@ cargo build --release
 ## Использование
 
 ```bash
-# Базовый запуск
-./target/release/mc-commander -f commands.txt
+# Базовый запуск (использует build_commands.mcfunction)
+./target/release/mc-commander
 
-# С задержкой 500мс между командами
-./target/release/mc-commander -f commands.txt -d 500
+# Пропустить первые 600 команд (если прервалось)
+./target/release/mc-commander --skip 600
 
-# С 10 секундами на переключение окна
-./target/release/mc-commander -f commands.txt -s 10
-
-# Пропустить первые 100 команд (если прервалось)
-./target/release/mc-commander -f commands.txt -k 100
+# Пропустить первые 600 команд (короткая форма)
+./target/release/mc-commander -s 600
 ```
 
 ## Параметры
 
 | Параметр | Описание | По умолчанию |
 |----------|----------|--------------|
-| `-f, --file` | Путь к файлу с командами | (обязательный) |
-| `-d, --delay` | Задержка между командами (мс) | 300 |
-| `-s, --start-delay` | Задержка перед началом (сек) | 5 |
-| `-k, --skip` | Пропустить первые N команд | 0 |
+| `-s, --skip N` | Пропустить первые N команд | 0 |
+
+**Примечание:** Программа автоматически читает команды из `build_commands.mcfunction`
 
 ## Как использовать
 
