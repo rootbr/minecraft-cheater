@@ -98,7 +98,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         clipboard.set_text(command)?;
 
         enigo.key(Key::Unicode('t'), Click)?;
-        thread::sleep(Duration::from_millis(600));
+        thread::sleep(Duration::from_millis(700));
 
         enigo.key(Key::Meta, Press)?;
         thread::sleep(Duration::from_millis(100));
