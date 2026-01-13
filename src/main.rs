@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         None => {
             // Default: read from commands.txt
-            BufReader::new(File::open("commands.txt")?)
+            BufReader::new(File::open("build_commands.mcfunction")?)
                 .lines()
                 .filter_map(|line| line.ok())
                 .filter(|line| {
