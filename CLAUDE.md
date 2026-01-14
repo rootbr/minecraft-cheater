@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**mc-commander** is a Rust CLI tool for generating and auto-executing Minecraft **Bedrock Edition** commands via keyboard emulation. It is designed to run on macOS with Minecraft running in Parallels Desktop.
+**mc-commander** is a Rust CLI tool for generating and auto-executing Minecraft **Bedrock Edition** commands via keyboard emulation. Designed for macOS with Minecraft running in Parallels Desktop.
 
 ## Technology Stack
 
@@ -10,12 +10,33 @@
 - **CLI Framework**: clap 4.5 with derive macros
 - **Keyboard Emulation**: enigo 0.2
 - **Clipboard**: arboard 3.4
+- **Python Scripts**: grabcraft_to_commands.py, optimize_commands.py
 - **Target Platform**: macOS (uses Meta key for Cmd+V)
 - **Target Game**: Minecraft Bedrock Edition
 
+## Installation
+
+### Rust CLI
+
+```bash
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Build
+cargo build --release
+
+# Executable: target/release/mc-commander
+```
+
+### macOS Permissions
+
+**Required:** System Settings → Privacy & Security → Accessibility
+- Add Terminal (or your terminal app)
+- Add IDE if running from there
+
 ## Architecture
 
-### Modules
+### Rust Modules
 
 - `main.rs` - CLI parsing, command execution loop, keyboard automation
 - `staircase.rs` - Staircase structure generator with configurable parameters
@@ -25,10 +46,11 @@
 1. Generate or load commands from `build_commands.mcfunction`
 2. Wait 5 seconds for user to switch to Minecraft window
 3. For each command:
-   - Copy command to clipboard
+   - Copy to clipboard
    - Press `T` to open chat
    - Paste with Cmd+V
    - Press Enter to execute
+   - Press Escape to close chat
 
 ### Configuration
 
@@ -39,86 +61,186 @@ Hardcoded constants in `main.rs`:
 - `FLIGHT_HEIGHT`, `WIDTH` - staircase dimensions
 - `WALL_MATERIAL`, `LANTERN`, `LANTERN_INTERVAL` - decorative options
 
-## Build & Run
+## CLI Usage
 
 ```bash
-# Build
-cargo build --release
+# Run from file (default: build_commands.mcfunction)
+./target/release/mc-commander
 
-# Run staircase generator
-cargo run -- staircase
+# Skip first N commands (resume interrupted build)
+./target/release/mc-commander --skip 600
+./target/release/mc-commander -s 600
 
-# Run from file with skip
-cargo run -- --skip 10
+# Generate staircase
+./target/release/mc-commander staircase
 ```
-
-## Command Format
-
-Commands use Bedrock Edition syntax:
-- `/fill x1 y1 z1 x2 y2 z2 block`
-- `/setblock x y z block`
-- Block states: `["minecraft:cardinal_direction"="south"]`
 
 ## File Structure
 
 ```
 src/
-├── main.rs        # CLI and execution engine
-└── staircase.rs   # Staircase command generator
-grabcraft_to_commands.py   # GrabCraft blueprint converter
-build_commands.mcfunction  # Command input file (generated or manual)
+├── main.rs                  # CLI and execution engine
+└── staircase.rs             # Staircase command generator
+grabcraft_to_commands.py     # GrabCraft blueprint converter
+optimize_commands.py         # Command optimizer (fill merge + offset)
+build_commands.mcfunction    # Command input file (generated or manual)
 ```
 
-## GrabCraft Blueprint Converter
+## Python Scripts
 
-`grabcraft_to_commands.py` - Python script that converts blueprints from [GrabCraft.com](https://www.grabcraft.com) to Minecraft Bedrock Edition commands.
+### grabcraft_to_commands.py
 
-### What is GrabCraft?
-
-GrabCraft is a website with thousands of Minecraft building blueprints (castles, towers, houses, ships, etc.). Each blueprint shows layer-by-layer block placement with materials.
-
-### How it works
-
-1. Fetches the blueprint page HTML
-2. Extracts LayerMap JavaScript containing block data
-3. Parses pixel coordinates and converts to grid positions
-4. Maps GrabCraft material names to Bedrock Edition block IDs
-5. Optimizes output using `/fill` for rectangular regions
-6. Generates `.mcfunction` file with commands
-
-### Usage
+Converts blueprints from [GrabCraft.com](https://www.grabcraft.com) to Minecraft Bedrock Edition commands.
 
 ```bash
-python3 grabcraft_to_commands.py <URL> [options]
+# Basic usage
+python3 grabcraft_to_commands.py <URL>
 
-# Examples
-python3 grabcraft_to_commands.py https://www.grabcraft.com/minecraft/tower/...
-python3 grabcraft_to_commands.py <URL> -o tower.mcfunction -y 70
-python3 grabcraft_to_commands.py <URL> -x 100 -y 64 -z 200
+# With offset
+python3 grabcraft_to_commands.py <URL> -x 100 -y 70 -z -50
+
+# Custom output file
+python3 grabcraft_to_commands.py <URL> -o my_tower.mcfunction
+
+# No optimization (setblock only)
+python3 grabcraft_to_commands.py <URL> --no-fill
+
+# Save CSV for analysis
+python3 grabcraft_to_commands.py <URL> --save-csv blocks.csv
 ```
 
-### Options
-
-- `-o FILE` - Output file (default: `build_commands.mcfunction`)
+**Options:**
+- `-o FILE` - Output file (default: build_commands.mcfunction)
 - `-x N` - X offset (default: 0)
-- `-y N` - Y offset (default: 64)
+- `-y N` - Y offset (default: 64, sea level)
 - `-z N` - Z offset (default: 0)
-- `--no-fill` - Use only `/setblock` (no optimization)
-- `--save-csv` - Save raw block data to CSV
+- `--no-fill` - Use only /setblock commands
+- `--save-csv [FILE]` - Save blocks to CSV
+
+### optimize_commands.py
+
+Optimizes existing command files by merging /setblock into /fill and applying offsets.
+
+```bash
+# Basic optimization
+python3 optimize_commands.py input.txt
+
+# With output file
+python3 optimize_commands.py input.txt output.txt
+
+# Apply offset
+python3 optimize_commands.py input.txt -x 100 -y 64 -z 200
+
+# Offset only (no optimization)
+python3 optimize_commands.py input.txt --no-fill -y 10
+```
 
 ### Command Optimization
 
-The script optimizes commands in priority order:
+Both scripts optimize commands in priority order:
 1. 3D cuboids (2x2x2+) → single `/fill`
 2. 2D rectangles (2x2+) → single `/fill`
 3. Horizontal lines (2+ blocks) → single `/fill`
 4. Vertical columns (2+ blocks) → single `/fill`
 5. Single blocks → `/setblock`
 
-Attachable blocks (ladders, torches) are placed last.
+Attachable blocks (ladders, torches, vines) are placed last.
+
+**Typical reduction: 30-70% fewer commands**
+
+## Bedrock Edition Block States
+
+Scripts use correct Bedrock Edition syntax. Key differences from Java:
+
+### Stairs
+
+```
+minecraft:oak_stairs["upside_down_bit"=false,"weirdo_direction"=0]
+```
+
+- `upside_down_bit`: `false` = normal, `true` = upside-down
+- `weirdo_direction`: 0=west, 1=east, 2=north, 3=south
+
+Supported: oak, spruce, birch, jungle, acacia, dark_oak, cobblestone, stone_brick
+
+### Slabs
+
+```
+minecraft:stone_slab["minecraft:vertical_half"="bottom"]
+```
+
+- `"bottom"` or `"top"`
+- Double slabs convert to full blocks (e.g., Double Stone Slab → smooth_stone)
+
+### Ladders / Torches / Chests
+
+```
+minecraft:ladder["facing_direction"=2]
+minecraft:wall_torch["facing_direction"=3]
+minecraft:chest["facing_direction"=5]
+```
+
+- `facing_direction`: 2=north, 3=south, 4=west, 5=east
+
+### Logs (with axis)
+
+```
+minecraft:oak_log["pillar_axis"="y"]
+```
+
+- `"x"`, `"y"`, or `"z"`
+
+### Doors
+
+```
+minecraft:oak_door["direction"=0,"open_bit"=false,"upper_block_bit"=false]
+```
+
+- `direction`: 0=south, 1=west, 2=north, 3=east
+- `upper_block_bit`: `false`=lower, `true`=upper
+
+### Leaves
+
+```
+minecraft:oak_leaves["persistent_bit"=true]
+```
+
+- `persistent_bit`: `true` = won't decay
+
+### Vines
+
+```
+minecraft:vine["vine_direction_bits"=4]
+```
+
+- Bitmask: 1=south, 2=west, 4=north, 8=east
+
+## Command File Format
+
+```mcfunction
+# Comments start with #
+/fill 0 64 0 10 64 10 minecraft:stone
+/setblock 5 65 5 minecraft:torch
+
+# Lines starting with = are skipped (separators)
+===============================
+```
+
+## Troubleshooting
+
+**Commands not typing:**
+- Check Accessibility permissions in System Settings
+- Ensure Minecraft window is active
+
+**Interrupted build:**
+- Note the last command number
+- Resume with `--skip <number>`
+
+**Stop execution:**
+- Press Ctrl+C in terminal
 
 ## Notes
 
-- Designed for use with Parallels Desktop running Windows + Minecraft Bedrock
-- Uses clipboard-based input to handle special characters in block names
-- Skip flag (`-s N`) allows resuming interrupted builds
+- Designed for Parallels Desktop running Windows + Minecraft Bedrock
+- Uses clipboard for special characters in block names
+- Tested with builds up to 41,000+ blocks

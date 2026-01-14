@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
 Convert GrabCraft blueprint URL directly to Minecraft Bedrock Edition commands.
-Fetches block data from web page and generates optimized /fill and /setblock commands.
+Fetches block data from web page and generates /setblock commands.
+No optimizations - pure 1:1 conversion from web blueprint to commands.
 """
 
 import csv
 import json
 import re
 import sys
-from collections import defaultdict, Counter
+from collections import Counter
 from urllib.request import urlopen, Request
 
 
@@ -69,6 +70,30 @@ MATERIAL_TO_BLOCK = {
     'Double Stone Brick Slab': 'minecraft:stone_bricks',
     'Double Cobblestone Slab': 'minecraft:cobblestone',
     'Double Wooden Slab': 'minecraft:oak_planks',
+
+    # Water
+    'Still Water': 'minecraft:water',
+    'Water': 'minecraft:water',
+    'Water (Water level Max)': 'minecraft:water',
+    'Water (Water level Max - 1)': 'minecraft:water',
+    'Water (Water level Max - 2)': 'minecraft:water',
+    'Water (Water level Max - 3)': 'minecraft:water',
+    'Water (Water level Max - 1, Falling)': 'minecraft:water',
+    'Water (Water level Max - 2, Falling)': 'minecraft:water',
+
+    # Lily Pad (Bedrock uses waterlily)
+    'Lily Pad': 'minecraft:waterlily',
+
+    # Vines (Bedrock uses vine_direction_bits: 1=south, 2=west, 4=north, 8=east)
+    'Vines ()': 'minecraft:vine',
+    'Vines (North)': 'minecraft:vine["vine_direction_bits"=4]',
+    'Vines (South)': 'minecraft:vine["vine_direction_bits"=1]',
+    'Vines (East)': 'minecraft:vine["vine_direction_bits"=8]',
+    'Vines (West)': 'minecraft:vine["vine_direction_bits"=2]',
+    'Vines (North&West)': 'minecraft:vine["vine_direction_bits"=6]',
+    'Vines (North&East)': 'minecraft:vine["vine_direction_bits"=12]',
+    'Vines (South&West)': 'minecraft:vine["vine_direction_bits"=3]',
+    'Vines (South&East)': 'minecraft:vine["vine_direction_bits"=9]',
 
     # Chests (Bedrock Edition uses numeric facing_direction)
     'Chest (North)': 'minecraft:chest["facing_direction"=2]',
@@ -278,234 +303,8 @@ def get_block_id(material: str) -> str:
     return f'minecraft:{block_name}'
 
 
-def can_use_fill(material: str) -> bool:
-    """Check if material can be used with /fill command."""
-    block_id = get_block_id(material)
-    if '[' in block_id:
-        return False
-    no_fill_blocks = ['ladder', 'torch', 'wall_torch', 'chest']
-    for b in no_fill_blocks:
-        if b in block_id:
-            return False
-    return True
-
-
-def find_fill_regions(blocks: list[dict]) -> tuple[list[tuple], set]:
-    """
-    Find regions of same material that can use /fill command.
-    Optimizes in order: 3D cuboids -> 2D rectangles -> 1D lines -> vertical columns
-    """
-    # Group blocks by material
-    by_material = defaultdict(list)
-    for b in blocks:
-        if can_use_fill(b['material']):
-            by_material[b['material']].append((b['x'], b['y'], b['z']))
-
-    fill_regions = []
-    used_blocks = set()
-
-    for material, coords in by_material.items():
-        remaining = set(coords) - used_blocks
-
-        # Try to find 3D cuboids (at least 2x2x2)
-        remaining = find_cuboids(material, remaining, fill_regions, used_blocks)
-
-        # Try to find 2D rectangles on same Y level (at least 2x2)
-        remaining = find_rectangles(material, remaining, fill_regions, used_blocks)
-
-        # Try to find 1D horizontal lines (at least 2 blocks)
-        remaining = find_horizontal_lines(material, remaining, fill_regions, used_blocks)
-
-        # Try to find vertical columns (at least 2 blocks)
-        remaining = find_vertical_columns(material, remaining, fill_regions, used_blocks)
-
-    return fill_regions, used_blocks
-
-
-def find_cuboids(material: str, coords: set, fill_regions: list, used_blocks: set) -> set:
-    """Find 3D cuboid regions."""
-    remaining = coords.copy()
-    coords_list = sorted(remaining)
-
-    for x, y, z in coords_list:
-        if (x, y, z) not in remaining:
-            continue
-
-        # Try to expand in all directions
-        max_x = x
-        max_y = y
-        max_z = z
-
-        # Find max X extent at this Y, Z
-        while (max_x + 1, y, z) in remaining:
-            max_x += 1
-
-        # Find max Z extent for this X range at this Y
-        can_expand_z = True
-        while can_expand_z and (x, y, max_z + 1) in remaining:
-            # Check if entire X range exists at next Z
-            for check_x in range(x, max_x + 1):
-                if (check_x, y, max_z + 1) not in remaining:
-                    can_expand_z = False
-                    break
-            if can_expand_z:
-                max_z += 1
-
-        # Find max Y extent for this XZ rectangle
-        can_expand_y = True
-        while can_expand_y and (x, max_y + 1, z) in remaining:
-            # Check if entire XZ rectangle exists at next Y
-            for check_x in range(x, max_x + 1):
-                for check_z in range(z, max_z + 1):
-                    if (check_x, max_y + 1, check_z) not in remaining:
-                        can_expand_y = False
-                        break
-                if not can_expand_y:
-                    break
-            if can_expand_y:
-                max_y += 1
-
-        # Only create cuboid if it's at least 2x2x2
-        volume = (max_x - x + 1) * (max_y - y + 1) * (max_z - z + 1)
-        if volume >= 8:  # At least 2x2x2
-            fill_regions.append((x, y, z, max_x, max_y, max_z, material))
-            for rx in range(x, max_x + 1):
-                for ry in range(y, max_y + 1):
-                    for rz in range(z, max_z + 1):
-                        remaining.discard((rx, ry, rz))
-                        used_blocks.add((rx, ry, rz, material))
-
-    return remaining
-
-
-def find_rectangles(material: str, coords: set, fill_regions: list, used_blocks: set) -> set:
-    """Find 2D rectangular regions on same Y level."""
-    remaining = coords.copy()
-
-    # Group by Y level
-    by_y = defaultdict(list)
-    for x, y, z in remaining:
-        by_y[y].append((x, z))
-
-    for y, xz_coords in by_y.items():
-        xz_set = set(xz_coords)
-        xz_sorted = sorted(xz_set)
-
-        for x, z in xz_sorted:
-            if (x, z) not in xz_set:
-                continue
-
-            # Find max X extent at this Z
-            max_x = x
-            while (max_x + 1, z) in xz_set:
-                max_x += 1
-
-            # Find max Z extent for this X range
-            max_z = z
-            can_expand = True
-            while can_expand:
-                max_z += 1
-                for check_x in range(x, max_x + 1):
-                    if (check_x, max_z) not in xz_set:
-                        can_expand = False
-                        max_z -= 1
-                        break
-
-            # Only create rectangle if it's at least 2x2
-            area = (max_x - x + 1) * (max_z - z + 1)
-            if area >= 4:
-                fill_regions.append((x, y, z, max_x, y, max_z, material))
-                for rx in range(x, max_x + 1):
-                    for rz in range(z, max_z + 1):
-                        xz_set.discard((rx, rz))
-                        remaining.discard((rx, y, rz))
-                        used_blocks.add((rx, y, rz, material))
-
-    return remaining
-
-
-def find_horizontal_lines(material: str, coords: set, fill_regions: list, used_blocks: set) -> set:
-    """Find horizontal lines along X or Z axis."""
-    remaining = coords.copy()
-
-    # Group by Y and Z for X-direction lines
-    by_yz = defaultdict(list)
-    for x, y, z in remaining:
-        by_yz[(y, z)].append(x)
-
-    for (y, z), x_list in by_yz.items():
-        x_list.sort()
-        i = 0
-        while i < len(x_list):
-            start_x = x_list[i]
-            end_x = start_x
-            while i + 1 < len(x_list) and x_list[i + 1] == end_x + 1:
-                i += 1
-                end_x = x_list[i]
-
-            if end_x > start_x:
-                fill_regions.append((start_x, y, z, end_x, y, z, material))
-                for x in range(start_x, end_x + 1):
-                    remaining.discard((x, y, z))
-                    used_blocks.add((x, y, z, material))
-            i += 1
-
-    # Group by Y and X for Z-direction lines
-    by_yx = defaultdict(list)
-    for x, y, z in remaining:
-        by_yx[(y, x)].append(z)
-
-    for (y, x), z_list in by_yx.items():
-        z_list.sort()
-        i = 0
-        while i < len(z_list):
-            start_z = z_list[i]
-            end_z = start_z
-            while i + 1 < len(z_list) and z_list[i + 1] == end_z + 1:
-                i += 1
-                end_z = z_list[i]
-
-            if end_z > start_z:
-                fill_regions.append((x, y, start_z, x, y, end_z, material))
-                for z in range(start_z, end_z + 1):
-                    remaining.discard((x, y, z))
-                    used_blocks.add((x, y, z, material))
-            i += 1
-
-    return remaining
-
-
-def find_vertical_columns(material: str, coords: set, fill_regions: list, used_blocks: set) -> set:
-    """Find vertical columns along Y axis."""
-    remaining = coords.copy()
-
-    # Group by X and Z for Y-direction columns
-    by_xz = defaultdict(list)
-    for x, y, z in remaining:
-        by_xz[(x, z)].append(y)
-
-    for (x, z), y_list in by_xz.items():
-        y_list.sort()
-        i = 0
-        while i < len(y_list):
-            start_y = y_list[i]
-            end_y = start_y
-            while i + 1 < len(y_list) and y_list[i + 1] == end_y + 1:
-                i += 1
-                end_y = y_list[i]
-
-            if end_y > start_y:
-                fill_regions.append((x, start_y, z, x, end_y, z, material))
-                for y in range(start_y, end_y + 1):
-                    remaining.discard((x, y, z))
-                    used_blocks.add((x, y, z, material))
-            i += 1
-
-    return remaining
-
-
 def is_attachable_block(material: str) -> bool:
-    """Check if block needs to be attached to another block."""
+    """Check if block needs to be attached to another block (place last)."""
     block_id = get_block_id(material)
     attachable = ['ladder', 'torch', 'wall_torch']
     for b in attachable:
@@ -514,45 +313,21 @@ def is_attachable_block(material: str) -> bool:
     return False
 
 
-def generate_commands(blocks: list[dict], offset_x: int = 0, offset_y: int = 64,
-                      offset_z: int = 0, use_fill: bool = True) -> list[str]:
-    """Generate Minecraft commands for all blocks."""
+def generate_commands(blocks: list[dict], offset_x: int = 0, offset_y: int = 0,
+                      offset_z: int = 0) -> list[str]:
+    """Generate Minecraft /setblock commands for all blocks."""
     commands = []
     attachable_commands = []
 
-    if use_fill:
-        fill_regions, used_blocks = find_fill_regions(blocks)
-
-        # Generate /fill commands
-        for x1, y1, z1, x2, y2, z2, material in fill_regions:
-            block_id = get_block_id(material)
-            cmd = f'/fill {x1 + offset_x} {y1 + offset_y} {z1 + offset_z} ' \
-                  f'{x2 + offset_x} {y2 + offset_y} {z2 + offset_z} {block_id}'
+    for b in blocks:
+        block_id = get_block_id(b['material'])
+        cmd = f'/setblock {b["x"] + offset_x} {b["y"] + offset_y} {b["z"] + offset_z} {block_id}'
+        if is_attachable_block(b['material']):
+            attachable_commands.append(cmd)
+        else:
             commands.append(cmd)
 
-        # Generate /setblock for remaining blocks
-        for b in blocks:
-            key = (b['x'], b['y'], b['z'], b['material'])
-            if key not in used_blocks:
-                block_id = get_block_id(b['material'])
-                cmd = f'/setblock {b["x"] + offset_x} {b["y"] + offset_y} ' \
-                      f'{b["z"] + offset_z} {block_id}'
-                if is_attachable_block(b['material']):
-                    attachable_commands.append(cmd)
-                else:
-                    commands.append(cmd)
-    else:
-        # Simple mode: only /setblock
-        for b in blocks:
-            block_id = get_block_id(b['material'])
-            cmd = f'/setblock {b["x"] + offset_x} {b["y"] + offset_y} ' \
-                  f'{b["z"] + offset_z} {block_id}'
-            if is_attachable_block(b['material']):
-                attachable_commands.append(cmd)
-            else:
-                commands.append(cmd)
-
-    # Add attachable blocks at the end
+    # Add attachable blocks at the end (they need support blocks first)
     commands.extend(attachable_commands)
 
     return commands
@@ -564,11 +339,10 @@ def generate_commands(blocks: list[dict], offset_x: int = 0, offset_y: int = 64,
 
 def main():
     page_url = 'https://www.grabcraft.com/minecraft/oakshire-wall-tower/military-buildings'
-    output_file = 'build_commands.mcfunction'
+    output_file = 'build_commands.txt'
     offset_x = 0
-    offset_y = 64
+    offset_y = 0
     offset_z = 0
-    use_fill = True
     save_csv = False
     csv_file = 'blocks.csv'
 
@@ -580,22 +354,24 @@ def main():
             print('Usage: grabcraft_to_commands.py [URL] [options]')
             print()
             print('Convert GrabCraft blueprint to Minecraft Bedrock Edition commands.')
+            print('Generates pure /setblock commands - one per block, no optimizations.')
             print()
             print('Arguments:')
             print('  URL                 GrabCraft page URL (required)')
             print()
             print('Options:')
-            print('  -o FILE             Output file (default: build_commands.mcfunction)')
+            print('  -o FILE             Output file (default: build_commands.txt)')
             print('  -x N                X offset (default: 0)')
-            print('  -y N                Y offset (default: 64)')
+            print('  -y N                Y offset (default: 0)')
             print('  -z N                Z offset (default: 0)')
-            print('  --no-fill           Use only /setblock commands')
             print('  --save-csv [FILE]   Save blocks to CSV file (default: blocks.csv)')
             print()
             print('Examples:')
             print('  python3 grabcraft_to_commands.py https://www.grabcraft.com/minecraft/tower/...')
-            print('  python3 grabcraft_to_commands.py <URL> -o tower.mcfunction -y 70')
+            print('  python3 grabcraft_to_commands.py <URL> -o tower.txt -y 70')
             print('  python3 grabcraft_to_commands.py <URL> --save-csv blocks.csv')
+            print()
+            print('Use optimize_commands.py to apply /fill optimization after generation.')
             sys.exit(0)
         elif args[i] == '-o' and i + 1 < len(args):
             output_file = args[i + 1]
@@ -609,9 +385,6 @@ def main():
         elif args[i] == '-z' and i + 1 < len(args):
             offset_z = int(args[i + 1])
             i += 2
-        elif args[i] == '--no-fill':
-            use_fill = False
-            i += 1
         elif args[i] == '--save-csv':
             save_csv = True
             if i + 1 < len(args) and not args[i + 1].startswith('-'):
@@ -644,7 +417,7 @@ def main():
 
     # Generate commands
     print(f'\nGenerating commands with offset ({offset_x}, {offset_y}, {offset_z})')
-    commands = generate_commands(blocks, offset_x, offset_y, offset_z, use_fill)
+    commands = generate_commands(blocks, offset_x, offset_y, offset_z)
 
     # Write output
     with open(output_file, 'w', encoding='utf-8') as f:
@@ -652,12 +425,7 @@ def main():
             f.write(cmd + '\n')
 
     print(f'Generated {len(commands)} commands to {output_file}')
-
-    # Summary
-    fill_count = sum(1 for c in commands if c.startswith('/fill'))
-    setblock_count = sum(1 for c in commands if c.startswith('/setblock'))
-    print(f'  /fill commands: {fill_count}')
-    print(f'  /setblock commands: {setblock_count}')
+    print(f'  /setblock commands: {len(commands)}')
 
 
 if __name__ == '__main__':
