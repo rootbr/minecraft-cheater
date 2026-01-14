@@ -113,7 +113,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut clipboard = Clipboard::new()?;
 
     for (i, command) in commands_to_execute.iter().enumerate() {
-        thread::sleep(Duration::from_millis(500));
         let actual_index = skip_count + i + 1;
         println!("[{}/{}] {}", actual_index, skip_count + total_commands, command);
         clipboard.set_text(command)?;
@@ -126,9 +125,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         enigo.key(Key::Unicode('v'), Click)?;
         thread::sleep(Duration::from_millis(100));
         enigo.key(Key::Meta, Release)?;
-        thread::sleep(Duration::from_millis(200));
+        thread::sleep(Duration::from_millis(50));
         enigo.key(Key::Return, Click)?;
-        thread::sleep(Duration::from_millis(200));
+        thread::sleep(Duration::from_millis(250));
     }
 
     println!();
