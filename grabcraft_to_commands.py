@@ -267,11 +267,34 @@ def extract_blocks_from_web(page_url: str) -> list[dict]:
     layermap = parse_layermap_js(js_content)
     print(f'Found {len(layermap)} layers')
 
-    # Extract blocks
-    blocks = []
-    cell_size = 20
-    grid_offset_x = 5
-    grid_offset_y = 291
+    # First pass: collect all pixel coordinates and auto-detect cell size
+    all_xs = []
+    all_ys = []
+
+    for layer_blocks in layermap.values():
+        for block in layer_blocks:
+            all_xs.append(block['x'])
+            all_ys.append(block['y'])
+
+    # Auto-detect cell size from coordinate spacing
+    xs_unique = sorted(set(all_xs))
+    ys_unique = sorted(set(all_ys))
+
+    cell_size = 15  # default
+    if len(xs_unique) > 1:
+        x_step = xs_unique[1] - xs_unique[0]
+        cell_size = x_step
+
+    # Use minimum coordinates as offsets
+    grid_offset_x = min(all_xs)
+    grid_offset_y = min(all_ys)
+
+    print(f'Auto-detected cell size: {cell_size} pixels')
+    print(f'Grid has {len(xs_unique)}x{len(ys_unique)} cells')
+    print(f'Pixel offsets: x={grid_offset_x}, y={grid_offset_y}')
+
+    # Second pass: extract blocks, keeping only last block for each coordinate
+    blocks_dict = {}  # (layer, x, z) -> block data
 
     for layer_str, layer_blocks in layermap.items():
         layer_num = int(layer_str)
@@ -284,17 +307,21 @@ def extract_blocks_from_web(page_url: str) -> list[dict]:
             grid_x, grid_z = pixel_to_grid(pixel_x, pixel_y, cell_size,
                                            grid_offset_x, grid_offset_y)
 
-            if 0 <= grid_x < dim_x and 0 <= grid_z < dim_z:
-                blocks.append({
+            # Store or overwrite (last block wins for duplicates)
+            if grid_x >= 0 and grid_z >= 0:
+                key = (layer_num, grid_x, grid_z)
+                blocks_dict[key] = {
                     'layer': layer_num,
                     'x': grid_x,
                     'z': grid_z,
                     'y': layer_num,
                     'material': material
-                })
+                }
 
+    # Convert to list
+    blocks = list(blocks_dict.values())
     blocks.sort(key=lambda b: (b['layer'], b['z'], b['x']))
-    print(f'Extracted {len(blocks)} blocks')
+    print(f'Extracted {len(blocks)} blocks (duplicates merged)')
 
     return blocks
 
@@ -317,22 +344,30 @@ def get_block_id(material: str) -> str:
     block_name = block_name.replace('wood_plank', 'planks')
 
     # Special handling for doors
-    if 'door' in block_name.lower() and 'oak_door' in block_name:
+    if 'door' in block_name.lower():
+        # Remove everything after first opening parenthesis (handles malformed data)
+        if '(' in block_name:
+            base_name = block_name.split('(')[0].strip('_')
+        else:
+            base_name = block_name.strip('_')
         # Bedrock uses wooden_door for oak doors
-        block_name = block_name.replace('oak_door', 'wooden_door')
+        base_name = base_name.replace('oak_door', 'wooden_door')
         # Add default door state if not present
-        if '[' not in block_name:
+        if '[' not in base_name:
             # Check if upper or lower part
             if 'upper' in material.lower():
-                block_name += '["direction"=2,"open_bit"=false,"upper_block_bit"=true]'
+                base_name += '["direction"=2,"open_bit"=false,"upper_block_bit"=true]'
             else:
-                block_name += '["direction"=2,"open_bit"=false,"upper_block_bit"=false]'
-        return f'minecraft:{block_name}'
+                base_name += '["direction"=2,"open_bit"=false,"upper_block_bit"=false]'
+        return f'minecraft:{base_name}'
 
     # Special handling for stairs with default orientation
     if 'stairs' in block_name.lower():
-        # Extract base name and remove direction/orientation info
-        base_name = re.sub(r'\([^)]*\)', '', block_name).strip('_')
+        # Remove everything after first opening parenthesis
+        if '(' in block_name:
+            base_name = block_name.split('(')[0].strip('_')
+        else:
+            base_name = block_name.strip('_')
         # Map common wood types
         base_name = base_name.replace('oak_wood_stairs', 'oak_stairs')
         base_name = base_name.replace('spruce_wood_stairs', 'spruce_stairs')
@@ -343,8 +378,9 @@ def get_block_id(material: str) -> str:
         # Add default Bedrock state
         return f'minecraft:{base_name}["upside_down_bit"=false,"weirdo_direction"=3]'
 
-    # Remove parentheses and their contents for other blocks
-    block_name = re.sub(r'\([^)]*\)', '', block_name).strip('_')
+    # Remove everything after first opening parenthesis for other blocks
+    if '(' in block_name:
+        block_name = block_name.split('(')[0].strip('_')
     return f'minecraft:{block_name}'
 
 

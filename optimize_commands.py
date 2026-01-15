@@ -67,10 +67,6 @@ def read_commands(input_file: str) -> dict:
 
 def can_use_fill(block_id: str) -> bool:
     """Check if block can be used with /fill command."""
-    # Blocks with block states cannot be reliably filled
-    if '[' in block_id:
-        return False
-
     # Attachable blocks should use setblock
     no_fill_blocks = ['ladder', 'torch', 'wall_torch', 'chest', 'door',
                       'lever', 'button', 'vine', 'rail']
@@ -90,12 +86,94 @@ def is_attachable_block(block_id: str) -> bool:
     return False
 
 
-def find_rectangles_in_layer(layer_blocks: list, processed: set) -> list:
+def find_vertical_rectangles(grid: dict, processed: set) -> list:
+    """Find vertical rectangles (walls/columns) across Y levels."""
+    # Group by material
+    by_material = defaultdict(list)
+    for (x, y, z), block_id in grid.items():
+        if (x, y, z) not in processed and can_use_fill(block_id):
+            by_material[block_id].append((x, y, z))
+
+    fill_regions = []
+
+    # For each material, find vertical rectangles
+    for block_id, coords in by_material.items():
+        coords_set = set(coords)
+        coords_sorted = sorted(coords_set)
+
+        while coords_sorted:
+            x_start, y_start, z_start = coords_sorted[0]
+
+            if (x_start, y_start, z_start) not in coords_set:
+                coords_sorted.pop(0)
+                continue
+
+            # Try to find vertical column at this XZ position first
+            y_end = y_start
+            while (x_start, y_end + 1, z_start) in coords_set:
+                y_end += 1
+
+            # Now try to extend in X direction (keeping Y range and Z fixed)
+            x_end = x_start
+            can_extend_x = True
+            while can_extend_x:
+                x_next = x_end + 1
+                # Check if entire column exists at x_next
+                for y in range(y_start, y_end + 1):
+                    if (x_next, y, z_start) not in coords_set:
+                        can_extend_x = False
+                        break
+                if can_extend_x:
+                    x_end = x_next
+
+            # Try to extend in Z direction (keeping Y range and X range)
+            z_end = z_start
+            can_extend_z = True
+            while can_extend_z:
+                z_next = z_end + 1
+                # Check if entire XY plane exists at z_next
+                for x in range(x_start, x_end + 1):
+                    for y in range(y_start, y_end + 1):
+                        if (x, y, z_next) not in coords_set:
+                            can_extend_z = False
+                            break
+                    if not can_extend_z:
+                        break
+                if can_extend_z:
+                    z_end = z_next
+
+            # Calculate volume
+            volume = (x_end - x_start + 1) * (y_end - y_start + 1) * (z_end - z_start + 1)
+
+            # Only create fill if it's worthwhile (at least 2 blocks in height or area >= 4)
+            height = y_end - y_start + 1
+            area = (x_end - x_start + 1) * (z_end - z_start + 1)
+
+            if height >= 2 and area >= 2:  # Vertical rectangle with at least 2x2 area
+                fill_regions.append((x_start, y_start, z_start, x_end, y_end, z_end, block_id))
+
+                # Mark as processed
+                for x in range(x_start, x_end + 1):
+                    for y in range(y_start, y_end + 1):
+                        for z in range(z_start, z_end + 1):
+                            coords_set.discard((x, y, z))
+                            processed.add((x, y, z))
+            else:
+                # Too small, don't create fill
+                coords_set.discard((x_start, y_start, z_start))
+
+            # Rebuild sorted list
+            coords_sorted = sorted(coords_set)
+
+    return fill_regions
+
+
+def find_rectangles_in_layer(layer_blocks: list, y: int, processed_3d: set) -> list:
     """Find rectangular areas with same material in a single Y layer."""
     # Group by material
     by_material = defaultdict(list)
     for x, z, block_id in layer_blocks:
-        if (x, z) not in processed and can_use_fill(block_id):
+        if (x, y, z) not in processed_3d and can_use_fill(block_id):
             by_material[block_id].append((x, z))
 
     fill_regions = []
@@ -141,7 +219,7 @@ def find_rectangles_in_layer(layer_blocks: list, processed: set) -> list:
                 for x in range(x_start, x_end + 1):
                     for z in range(z_start, z_end + 1):
                         coords_set.discard((x, z))
-                        processed.add((x, z))
+                        processed_3d.add((x, y, z))
             else:
                 # Too small, don't create fill
                 coords_set.discard((x_start, z_start))
@@ -153,36 +231,45 @@ def find_rectangles_in_layer(layer_blocks: list, processed: set) -> list:
 
 
 def optimize_grid(grid: dict) -> tuple[list, list]:
-    """Optimize grid using layer-by-layer rectangular area detection."""
-    # Group blocks by Y level
-    by_y = defaultdict(list)
-    for (x, y, z), block_id in grid.items():
-        by_y[y].append((x, z, block_id))
-
+    """Optimize grid using 3D cuboid and vertical/horizontal rectangle detection."""
+    processed_3d = set()  # (x, y, z) coordinates already processed
     fill_commands = []
     setblock_commands = []
     attachable_commands = []
 
-    # Process each Y layer
+    # First pass: Find vertical rectangles/cuboids (walls, columns)
+    print('Finding vertical rectangles...')
+    vertical_rectangles = find_vertical_rectangles(grid, processed_3d)
+    for x1, y1, z1, x2, y2, z2, block_id in vertical_rectangles:
+        fill_commands.append(f'/fill {x1} {y1} {z1} {x2} {y2} {z2} {block_id}')
+    print(f'  Found {len(vertical_rectangles)} vertical regions')
+
+    # Second pass: Find horizontal rectangles in each Y layer
+    print('Finding horizontal rectangles...')
+    by_y = defaultdict(list)
+    for (x, y, z), block_id in grid.items():
+        by_y[y].append((x, z, block_id))
+
+    horizontal_count = 0
     for y in sorted(by_y.keys()):
         layer_blocks = by_y[y]
-        processed = set()  # (x, z) coordinates processed in this layer
-
-        # Find rectangles in this layer
-        rectangles = find_rectangles_in_layer(layer_blocks, processed)
+        rectangles = find_rectangles_in_layer(layer_blocks, y, processed_3d)
+        horizontal_count += len(rectangles)
 
         # Generate fill commands for rectangles
         for x1, z1, x2, z2, block_id in rectangles:
             fill_commands.append(f'/fill {x1} {y} {z1} {x2} {y} {z2} {block_id}')
 
-        # Generate setblock for remaining blocks
-        for x, z, block_id in layer_blocks:
-            if (x, z) not in processed:
-                cmd = f'/setblock {x} {y} {z} {block_id}'
-                if is_attachable_block(block_id):
-                    attachable_commands.append(cmd)
-                else:
-                    setblock_commands.append(cmd)
+    print(f'  Found {horizontal_count} horizontal regions')
+
+    # Third pass: Generate setblock for remaining unprocessed blocks
+    for (x, y, z), block_id in grid.items():
+        if (x, y, z) not in processed_3d:
+            cmd = f'/setblock {x} {y} {z} {block_id}'
+            if is_attachable_block(block_id):
+                attachable_commands.append(cmd)
+            else:
+                setblock_commands.append(cmd)
 
     # Combine commands: fills first, then setblocks, then attachables last
     all_commands = fill_commands + setblock_commands + attachable_commands
@@ -303,7 +390,7 @@ def main():
 
     # Optimize or just convert to commands
     if use_optimization:
-        print('Optimizing with layer-by-layer rectangle detection...')
+        print('Optimizing with 3D cuboid and rectangle detection...')
         commands, (fill_count, setblock_count) = optimize_grid(grid)
     else:
         print('Converting without optimization...')
