@@ -178,46 +178,6 @@ impl FeedbackDetector {
         img.crop_imm(x, y, width, height)
     }
 
-    fn is_dark_region(img: &DynamicImage, threshold: u8, coverage: f32) -> bool {
-        let pixels = img.to_rgba8();
-        let total_pixels = (img.width() * img.height()) as f32;
-        let mut dark_count = 0u32;
-
-        for pixel in pixels.pixels() {
-            let r = pixel[0];
-            let g = pixel[1];
-            let b = pixel[2];
-
-            // Check if pixel is dark (below threshold)
-            if r < threshold && g < threshold && b < threshold {
-                dark_count += 1;
-            }
-        }
-
-        let dark_ratio = dark_count as f32 / total_pixels;
-        dark_ratio >= coverage
-    }
-
-    fn is_bright_region(img: &DynamicImage, threshold: u8, coverage: f32) -> bool {
-        let pixels = img.to_rgba8();
-        let total_pixels = (img.width() * img.height()) as f32;
-        let mut bright_count = 0u32;
-
-        for pixel in pixels.pixels() {
-            let r = pixel[0];
-            let g = pixel[1];
-            let b = pixel[2];
-
-            // Check if pixel is bright (above threshold)
-            if r > threshold && g > threshold && b > threshold {
-                bright_count += 1;
-            }
-        }
-
-        let bright_ratio = bright_count as f32 / total_pixels;
-        bright_ratio >= coverage
-    }
-
     pub fn detect_chat_state(&mut self) -> Result<ChatState> {
         if !self.is_enabled() {
             return Err(FeedbackError::ChatDetectionFailed(
@@ -231,9 +191,6 @@ impl FeedbackDetector {
         // Calculate actual darkness percentage for debugging
         let (dark_pixels, total_pixels) = Self::count_dark_pixels(&chat_area, 80);
         let dark_ratio = dark_pixels as f32 / total_pixels as f32;
-
-        // Debug output
-        // println!("🔍 Detection: dark_ratio={:.2}% (threshold=80%)", dark_ratio * 100.0);
 
         // Check for dark overlay (chat open)
         if dark_ratio >= 0.5 {
@@ -292,14 +249,10 @@ impl FeedbackDetector {
 
             if start.elapsed() >= timeout {
                 let elapsed = start.elapsed();
-                eprintln!(
-                    "⚠ Chat open detection timed out after {:?}, continuing anyway",
-                    elapsed
-                );
-                return Ok(()); // Continue anyway instead of erroring
+                return Err(FeedbackError::DetectionTimeout(
+                    (elapsed.as_millis() / poll_interval.as_millis()) as u32
+                ));
             }
-
-            // Simple polling every 200ms
             thread::sleep(poll_interval);
         }
     }
@@ -332,11 +285,9 @@ impl FeedbackDetector {
 
             if start.elapsed() >= timeout {
                 let elapsed = start.elapsed();
-                eprintln!(
-                    "⚠ Chat close detection timed out after {:?}, continuing anyway",
-                    elapsed
-                );
-                return Ok(()); // Continue anyway instead of erroring
+                return Err(FeedbackError::DetectionTimeout(
+                    (elapsed.as_millis() / poll_interval.as_millis()) as u32
+                ));
             }
 
             // Simple polling every 200ms

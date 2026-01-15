@@ -16,7 +16,7 @@ use std::time::Duration;
 /// Chunk size for clearing (32x32x32 = 32768 blocks, Bedrock limit)
 const CHUNK_SIZE: i32 = 32;
 
-/// Execute a single Minecraft command via keyboard emulation
+/// Execute a single Minecraft command via keyboard emulation with retry logic
 fn execute_command(
     command: &str,
     offset_x: i32,
@@ -28,20 +28,79 @@ fn execute_command(
     no_feedback: bool,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let command_with_offset = apply_offset(command, offset_x, offset_y, offset_z);
-    clipboard.set_text(&command_with_offset)?;
+    const MAX_RETRIES: u32 = 3;
+
+    for attempt in 1..=MAX_RETRIES {
+        match execute_command_once(
+            &command_with_offset,
+            enigo,
+            clipboard,
+            detector.as_deref_mut(),
+            no_feedback,
+        ) {
+            Ok(_) => return Ok(command_with_offset),
+            Err(e) => {
+                if attempt < MAX_RETRIES {
+                    eprintln!("⚠ Попытка {}/{} не удалась: {}. Нажимаю ESC и повторяю...", attempt, MAX_RETRIES, e);
+                    // Press ESC multiple times to ensure chat closes
+                    eprintln!("  → Нажимаю ESC...");
+                    enigo.key(Key::Escape, Click)?;
+                    thread::sleep(Duration::from_millis(100));
+                    enigo.key(Key::Escape, Click)?;
+                    thread::sleep(Duration::from_millis(100));
+                    eprintln!("  → ESC нажат, жду 500ms...");
+                    thread::sleep(Duration::from_millis(500));
+                    eprintln!("  → Повторяю команду (попытка {})", attempt + 1);
+                } else {
+                    eprintln!("✗ Команда не выполнена после {} попыток: {}", MAX_RETRIES, e);
+                    // Press ESC multiple times to ensure chat is closed
+                    eprintln!("  → Нажимаю ESC для очистки...");
+                    enigo.key(Key::Escape, Click)?;
+                    thread::sleep(Duration::from_millis(100));
+                    enigo.key(Key::Escape, Click)?;
+                    thread::sleep(Duration::from_millis(200));
+                    return Err(e);
+                }
+            }
+        }
+    }
+
+    Ok(command_with_offset)
+}
+
+/// Execute command once (internal helper for retry logic)
+fn execute_command_once(
+    command_with_offset: &str,
+    enigo: &mut Enigo,
+    clipboard: &mut Clipboard,
+    mut detector: Option<&mut FeedbackDetector>,
+    no_feedback: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    eprintln!("  [1] Копирую команду в буфер обмена...");
+    clipboard.set_text(command_with_offset)?;
 
     // Open chat
+    eprintln!("  [2] Нажимаю T для открытия чата...");
     enigo.key(Key::Unicode('t'), Click)?;
 
     // Wait for chat to open
+    eprintln!("  [3] Жду открытия чата...");
     if !no_feedback && detector.is_some() {
-        let _ = detector.as_mut().unwrap().wait_for_chat_open();
+        match detector.as_mut().unwrap().wait_for_chat_open() {
+            Ok(_) => eprintln!("  [3] ✓ Чат открылся"),
+            Err(e) => {
+                eprintln!("  [3] ✗ Таймаут открытия чата: {}", e);
+                return Err(Box::new(e));
+            }
+        }
     } else {
         // Fallback to fixed delay
         thread::sleep(Duration::from_millis(700));
+        eprintln!("  [3] Использую фиксированную задержку (no feedback)");
     }
 
     // Paste command
+    eprintln!("  [4] Вставляю команду (Cmd+V)...");
     enigo.key(Key::Meta, Press)?;
     thread::sleep(Duration::from_millis(50));
     enigo.key(Key::Unicode('v'), Click)?;
@@ -49,34 +108,44 @@ fn execute_command(
     enigo.key(Key::Meta, Release)?;
 
     // Execute command
+    eprintln!("  [5] Нажимаю Enter...");
     thread::sleep(Duration::from_millis(50));
     enigo.key(Key::Return, Click)?;
 
     // Check command result and wait for chat close
+    eprintln!("  [6] Жду закрытия чата...");
     if !no_feedback && detector.is_some() {
         let det = detector.as_mut().unwrap();
 
         match det.read_command_response() {
             Ok(CommandResult::Success) => {}
             Ok(CommandResult::Error(err)) => {
-                eprintln!("⚠ Command execution error: {}", err);
+                eprintln!("  [6] ⚠ Command execution error: {}", err);
             }
             Ok(CommandResult::Unknown) => {
                 // No response detected, assume success
             }
             Err(e) => {
-                eprintln!("⚠ Failed to read command response: {}", e);
+                eprintln!("  [6] ⚠ Failed to read command response: {}", e);
             }
         }
 
         // Wait for chat to close
-        let _ = det.wait_for_chat_close();
+        match det.wait_for_chat_close() {
+            Ok(_) => eprintln!("  [6] ✓ Чат закрылся"),
+            Err(e) => {
+                eprintln!("  [6] ✗ Таймаут закрытия чата: {}", e);
+                return Err(Box::new(e));
+            }
+        }
     } else {
         // Fallback to fixed delay
         thread::sleep(Duration::from_millis(250));
+        eprintln!("  [6] Использую фиксированную задержку (no feedback)");
     }
 
-    Ok(command_with_offset)
+    eprintln!("  [7] ✓ Команда выполнена успешно");
+    Ok(())
 }
 
 /// Apply coordinate offset to a command
@@ -270,6 +339,9 @@ struct Cli {
 enum Commands {
     /// Generate and execute staircase with landing
     Staircase,
+
+    /// Test ESC key press (opens chat and closes it 3 times)
+    TestEsc,
 }
 
 // Configuration constants (hardcoded)
@@ -287,6 +359,36 @@ const LANTERN_INTERVAL: i32 = 2; // lantern every N steps
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
+    // Handle test-esc command separately
+    if matches!(cli.command, Some(Commands::TestEsc)) {
+        println!("=== Тест нажатия ESC ===");
+        println!("У тебя 5 секунд чтобы переключиться на Minecraft...");
+        for i in (1..=5).rev() {
+            println!("  {}...", i);
+            thread::sleep(Duration::from_secs(1));
+        }
+
+        let mut enigo = Enigo::new(&Settings::default())?;
+
+        for i in 1..=3 {
+            println!("\nТест {}/3:", i);
+            println!("  → Нажимаю T (открытие чата)");
+            enigo.key(Key::Unicode('t'), Click)?;
+            thread::sleep(Duration::from_millis(500));
+
+            println!("  → Нажимаю ESC (закрытие чата)");
+            enigo.key(Key::Escape, Click)?;
+            thread::sleep(Duration::from_millis(500));
+
+            println!("  → Нажимаю ESC еще раз (для надежности)");
+            enigo.key(Key::Escape, Click)?;
+            thread::sleep(Duration::from_millis(1000));
+        }
+
+        println!("\n✓ Тест завершен! Если чат открывался и закрывался, ESC работает корректно.");
+        return Ok(());
+    }
+
     let commands: Vec<String> = match cli.command {
         Some(Commands::Staircase) => {
             println!("Generating staircase commands...");
@@ -303,6 +405,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 lantern_interval: LANTERN_INTERVAL,
             };
             staircase::generate_staircase(&cfg)
+        }
+        Some(Commands::TestEsc) => {
+            unreachable!("TestEsc handled above")
         }
         None => {
             // Default: read from commands.txt
