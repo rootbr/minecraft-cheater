@@ -411,7 +411,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         None => {
             // Default: read from commands.txt
-            BufReader::new(File::open("build_commands.txt")?)
+            BufReader::new(File::open("build_commands_optimized.txt")?)
                 .lines()
                 .filter_map(|line| line.ok())
                 .filter(|line| {

@@ -1,0 +1,256 @@
+/fill 0 1 1 16 1 3 minecraft:dirt
+/fill 0 1 4 2 1 16 minecraft:dirt
+/fill 3 1 7 3 1 16 minecraft:dirt
+/fill 4 1 8 16 1 16 minecraft:dirt
+/fill 6 1 4 16 1 7 minecraft:dirt
+/fill 3 1 4 4 1 6 minecraft:sand
+/fill 0 2 1 16 2 2 minecraft:gravel
+/fill 0 2 3 1 2 16 minecraft:gravel
+/fill 2 2 16 16 2 16 minecraft:gravel
+/fill 3 2 14 6 2 14 minecraft:gravel
+/fill 6 2 9 9 2 9 minecraft:gravel
+/fill 8 2 4 8 2 8 minecraft:gravel
+/fill 8 2 11 8 2 15 minecraft:gravel
+/fill 9 2 14 13 2 14 minecraft:gravel
+/fill 10 2 4 13 2 4 minecraft:gravel
+/fill 12 2 11 13 2 13 minecraft:gravel
+/fill 13 2 7 13 2 10 minecraft:gravel
+/fill 15 2 3 16 2 15 minecraft:gravel
+/fill 2 2 3 5 2 3 minecraft:sand
+/fill 6 2 4 6 2 7 minecraft:sand
+/fill 2 2 7 2 2 10 minecraft:grass_block
+/fill 3 2 8 3 2 11 minecraft:grass_block
+/fill 3 2 15 6 2 15 minecraft:grass_block
+/fill 4 2 12 7 2 13 minecraft:grass_block
+/fill 7 2 3 7 2 8 minecraft:grass_block
+/fill 9 2 5 11 2 6 minecraft:grass_block
+/fill 10 2 7 11 2 10 minecraft:grass_block
+/fill 10 2 15 14 2 15 minecraft:grass_block
+/fill 11 2 3 14 2 3 minecraft:grass_block
+/fill 14 2 4 14 2 14 minecraft:grass_block
+/fill 4 2 6 5 2 7 minecraft:water
+/fill 1 3 2 7 3 2 minecraft:oak_fence
+/fill 1 3 3 1 3 16 minecraft:oak_fence
+/fill 2 3 16 6 3 16 minecraft:oak_fence
+/fill 9 3 2 15 3 2 minecraft:oak_fence
+/fill 10 3 16 15 3 16 minecraft:oak_fence
+/fill 15 3 3 15 3 15 minecraft:oak_fence
+/fill 0 9 9 3 9 10 minecraft:oak_leaves
+/fill 0 9 11 1 9 12 minecraft:oak_leaves
+/fill 3 9 11 4 9 12 minecraft:oak_leaves
+/fill 0 10 9 3 10 10 minecraft:oak_leaves
+/fill 0 10 11 1 10 13 minecraft:oak_leaves
+/fill 2 10 12 4 10 13 minecraft:oak_leaves
+/fill 1 14 2 8 14 2 minecraft:acacia_leaves
+/fill 1 14 3 5 14 3 minecraft:acacia_leaves
+/fill 1 14 4 3 14 6 minecraft:acacia_leaves
+/fill 2 14 1 7 14 1 minecraft:acacia_leaves
+/fill 2 14 7 6 14 7 minecraft:acacia_leaves
+/fill 4 14 5 7 14 6 minecraft:acacia_leaves
+/fill 5 14 4 8 14 4 minecraft:acacia_leaves
+/fill 3 15 3 7 15 3 minecraft:acacia_leaves
+/fill 4 15 2 7 15 2 minecraft:acacia_leaves
+/setblock 5 1 4 minecraft:glowstone
+/setblock 5 1 5 minecraft:sand
+/setblock 5 1 6 minecraft:sand
+/setblock 4 1 7 minecraft:glowstone
+/setblock 5 1 7 minecraft:sand
+/setblock 6 2 3 minecraft:dirt
+/setblock 8 2 3 minecraft:gravel
+/setblock 9 2 3 minecraft:gravel
+/setblock 10 2 3 minecraft:gravel
+/setblock 2 2 4 minecraft:sand
+/setblock 3 2 4 minecraft:water
+/setblock 4 2 4 minecraft:water
+/setblock 5 2 4 minecraft:water
+/setblock 9 2 4 minecraft:grass_block
+/setblock 2 2 5 minecraft:sand
+/setblock 3 2 5 minecraft:water
+/setblock 4 2 5 minecraft:sand
+/setblock 5 2 5 minecraft:water
+/setblock 12 2 5 minecraft:gravel
+/setblock 13 2 5 minecraft:gravel
+/setblock 2 2 6 minecraft:sand
+/setblock 3 2 6 minecraft:water
+/setblock 12 2 6 minecraft:gravel
+/setblock 13 2 6 minecraft:grass_block
+/setblock 3 2 7 minecraft:sand
+/setblock 9 2 7 minecraft:gravel
+/setblock 12 2 7 minecraft:gravel
+/setblock 4 2 8 minecraft:sand
+/setblock 5 2 8 minecraft:sand
+/setblock 6 2 8 minecraft:grass_block
+/setblock 9 2 8 minecraft:gravel
+/setblock 12 2 8 minecraft:grass_block
+/setblock 4 2 9 minecraft:grass_block
+/setblock 5 2 9 minecraft:grass_block
+/setblock 12 2 9 minecraft:grass_block
+/setblock 4 2 10 minecraft:grass_block
+/setblock 5 2 10 minecraft:gravel
+/setblock 6 2 10 minecraft:gravel
+/setblock 7 2 10 minecraft:grass_block
+/setblock 8 2 10 minecraft:gravel
+/setblock 9 2 10 minecraft:gravel
+/setblock 12 2 10 minecraft:grass_block
+/setblock 2 2 11 minecraft:dirt
+/setblock 4 2 11 minecraft:gravel
+/setblock 5 2 11 minecraft:grass_block
+/setblock 6 2 11 minecraft:grass_block
+/setblock 7 2 11 minecraft:grass_block
+/setblock 9 2 11 minecraft:grass_block
+/setblock 10 2 11 minecraft:glowstone
+/setblock 11 2 11 minecraft:grass_block
+/setblock 2 2 12 minecraft:grass_block
+/setblock 3 2 12 minecraft:gravel
+/setblock 9 2 12 minecraft:grass_block
+/setblock 10 2 12 minecraft:grass_block
+/setblock 11 2 12 minecraft:grass_block
+/setblock 2 2 13 minecraft:grass_block
+/setblock 3 2 13 minecraft:gravel
+/setblock 9 2 13 minecraft:grass_block
+/setblock 10 2 13 minecraft:grass_block
+/setblock 11 2 13 minecraft:gravel
+/setblock 2 2 14 minecraft:grass_block
+/setblock 7 2 14 minecraft:grass_block
+/setblock 2 2 15 minecraft:glowstone
+/setblock 7 2 15 minecraft:gravel
+/setblock 9 2 15 minecraft:gravel
+/setblock 6 3 3 minecraft:acacia_wood
+/setblock 7 3 3 minecraft:azure_bluet
+/setblock 11 3 3 minecraft:flower
+/setblock 12 3 3 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 13 3 3 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 14 3 3 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 14 3 4 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 4 3 5 minecraft:sugar_canes
+/setblock 14 3 5 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 4 3 6 minecraft:waterlily
+/setblock 10 3 6 minecraft:azure_bluet
+/setblock 2 3 7 minecraft:flower
+/setblock 10 3 7 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 6 3 8 minecraft:orange_tulip
+/setblock 10 3 8 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 14 3 8 minecraft:cauldron
+/setblock 2 3 9 minecraft:grass_block
+/setblock 4 3 9 minecraft:blue_orchid
+/setblock 10 3 9 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 14 3 9 minecraft:cauldron
+/setblock 2 3 10 minecraft:grass_block
+/setblock 10 3 10 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 2 3 11 minecraft:oak_log
+/setblock 10 3 11 minecraft:cauldron
+/setblock 2 3 12 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 14 3 12 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 2 3 13 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 14 3 13 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 2 3 14 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 14 3 14 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 2 3 15 minecraft:cauldron
+/setblock 12 3 15 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 13 3 15 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 14 3 15 minecraft:jungle_stairs["upside_down_bit"=false,"weirdo_direction"=3]
+/setblock 1 4 2 minecraft:oak_fence
+/setblock 15 4 2 minecraft:oak_fence
+/setblock 5 4 3 minecraft:acacia_wood
+/setblock 11 4 3 minecraft:flower
+/setblock 4 4 5 minecraft:sugar_canes
+/setblock 2 4 7 minecraft:flower
+/setblock 2 4 11 minecraft:oak_log
+/setblock 1 4 16 minecraft:oak_fence
+/setblock 6 4 16 minecraft:oak_fence
+/setblock 10 4 16 minecraft:oak_fence
+/setblock 15 4 16 minecraft:oak_fence
+/setblock 1 5 2 minecraft:oak_fence
+/setblock 15 5 2 minecraft:oak_fence
+/setblock 5 5 3 minecraft:acacia_wood
+/setblock 4 5 5 minecraft:sugar_canes
+/setblock 2 5 11 minecraft:oak_log
+/setblock 1 5 16 minecraft:oak_fence
+/setblock 6 5 16 minecraft:oak_fence
+/setblock 7 5 16 minecraft:oak_fence
+/setblock 9 5 16 minecraft:oak_fence
+/setblock 10 5 16 minecraft:oak_fence
+/setblock 15 5 16 minecraft:oak_fence
+/setblock 1 6 2 minecraft:oak_fence
+/setblock 2 6 2 minecraft:sea_lantern
+/setblock 14 6 2 minecraft:sea_lantern
+/setblock 15 6 2 minecraft:oak_fence
+/setblock 1 6 3 minecraft:sea_lantern
+/setblock 4 6 3 minecraft:acacia_wood
+/setblock 15 6 3 minecraft:sea_lantern
+/setblock 2 6 11 minecraft:oak_log
+/setblock 1 6 15 minecraft:sea_lantern
+/setblock 15 6 15 minecraft:sea_lantern
+/setblock 1 6 16 minecraft:oak_fence
+/setblock 2 6 16 minecraft:sea_lantern
+/setblock 6 6 16 minecraft:
+/setblock 7 6 16 minecraft:oak_fence
+/setblock 8 6 16 minecraft:oak_fence
+/setblock 9 6 16 minecraft:oak_fence
+/setblock 10 6 16 minecraft:
+/setblock 14 6 16 minecraft:sea_lantern
+/setblock 15 6 16 minecraft:oak_fence
+/setblock 1 7 2 minecraft:oak_fence
+/setblock 2 7 2 minecraft:oak_fence
+/setblock 14 7 2 minecraft:oak_fence
+/setblock 15 7 2 minecraft:oak_fence
+/setblock 1 7 3 minecraft:oak_fence
+/setblock 4 7 3 minecraft:acacia_wood
+/setblock 15 7 3 minecraft:oak_fence
+/setblock 2 7 11 minecraft:oak_log
+/setblock 1 7 15 minecraft:oak_fence
+/setblock 8 7 15 minecraft:wooden_trapdoor
+/setblock 15 7 15 minecraft:oak_fence
+/setblock 1 7 16 minecraft:oak_fence
+/setblock 2 7 16 minecraft:oak_fence
+/setblock 7 7 16 minecraft:
+/setblock 8 7 16 minecraft:glowstone
+/setblock 9 7 16 minecraft:
+/setblock 14 7 16 minecraft:oak_fence
+/setblock 15 7 16 minecraft:oak_fence
+/setblock 4 8 3 minecraft:acacia_wood
+/setblock 2 8 11 minecraft:oak_log
+/setblock 4 9 3 minecraft:acacia_wood
+/setblock 4 9 10 minecraft:oak_leaves
+/setblock 2 9 11 minecraft:oak_log
+/setblock 2 9 12 minecraft:oak_leaves
+/setblock 1 9 13 minecraft:oak_leaves
+/setblock 2 9 13 minecraft:oak_leaves
+/setblock 3 9 13 minecraft:oak_leaves
+/setblock 4 10 3 minecraft:acacia_wood
+/setblock 4 10 10 minecraft:oak_leaves
+/setblock 2 10 11 minecraft:oak_log
+/setblock 3 10 11 minecraft:glowstone
+/setblock 4 10 11 minecraft:oak_leaves
+/setblock 4 11 3 minecraft:acacia_wood
+/setblock 1 11 10 minecraft:oak_leaves
+/setblock 2 11 10 minecraft:oak_leaves
+/setblock 3 11 10 minecraft:oak_leaves
+/setblock 1 11 11 minecraft:oak_leaves
+/setblock 2 11 11 minecraft:oak_log
+/setblock 3 11 11 minecraft:oak_leaves
+/setblock 1 11 12 minecraft:oak_leaves
+/setblock 2 11 12 minecraft:oak_leaves
+/setblock 3 11 12 minecraft:oak_leaves
+/setblock 4 12 3 minecraft:acacia_wood
+/setblock 2 12 10 minecraft:oak_leaves
+/setblock 1 12 11 minecraft:oak_leaves
+/setblock 2 12 11 minecraft:oak_leaves
+/setblock 3 12 11 minecraft:oak_leaves
+/setblock 2 12 12 minecraft:oak_leaves
+/setblock 4 13 3 minecraft:acacia_wood
+/setblock 5 13 3 minecraft:acacia_wood
+/setblock 6 14 3 minecraft:acacia_wood
+/setblock 7 14 3 minecraft:acacia_leaves
+/setblock 8 14 3 minecraft:acacia_leaves
+/setblock 4 14 4 minecraft:acacia_wood
+/setblock 2 15 4 minecraft:acacia_leaves
+/setblock 3 15 4 minecraft:acacia_leaves
+/setblock 4 15 4 minecraft:glowstone
+/setblock 5 15 4 minecraft:acacia_leaves
+/setblock 6 15 4 minecraft:acacia_leaves
+/setblock 7 15 4 minecraft:acacia_leaves
+/setblock 3 15 5 minecraft:acacia_leaves
+/setblock 4 15 5 minecraft:acacia_leaves
+/setblock 5 15 5 minecraft:acacia_leaves
+/setblock 4 15 6 minecraft:acacia_leaves
