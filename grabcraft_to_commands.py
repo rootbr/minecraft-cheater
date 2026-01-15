@@ -153,33 +153,33 @@ MATERIAL_TO_BLOCK = {
     'Oak Wood Stairs (East, Upside-down)': 'minecraft:oak_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
     'Oak Wood Stairs (West, Upside-down)': 'minecraft:oak_stairs["upside_down_bit"=true,"weirdo_direction"=2]',
 
-    # Cobblestone Stairs - Normal (Bedrock: upside_down_bit=false for normal, weirdo_direction for facing)
-    'Cobblestone Stairs (North, Normal)': 'minecraft:cobblestone_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
-    'Cobblestone Stairs (South, Normal)': 'minecraft:cobblestone_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
-    'Cobblestone Stairs (East, Normal)': 'minecraft:cobblestone_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
-    'Cobblestone Stairs (West, Normal)': 'minecraft:cobblestone_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
+    # Cobblestone Stairs - Normal (Bedrock: uses stone_stairs, upside_down_bit=false for normal, weirdo_direction for facing)
+    'Cobblestone Stairs (North, Normal)': 'minecraft:stone_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
+    'Cobblestone Stairs (South, Normal)': 'minecraft:stone_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
+    'Cobblestone Stairs (East, Normal)': 'minecraft:stone_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
+    'Cobblestone Stairs (West, Normal)': 'minecraft:stone_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
 
-    # Cobblestone Stairs - Upside-down (Bedrock: upside_down_bit=true for top)
-    'Cobblestone Stairs (North, Upside-down)': 'minecraft:cobblestone_stairs["upside_down_bit"=true,"weirdo_direction"=1]',
-    'Cobblestone Stairs (South, Upside-down)': 'minecraft:cobblestone_stairs["upside_down_bit"=true,"weirdo_direction"=0]',
-    'Cobblestone Stairs (East, Upside-down)': 'minecraft:cobblestone_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
-    'Cobblestone Stairs (West, Upside-down)': 'minecraft:cobblestone_stairs["upside_down_bit"=true,"weirdo_direction"=2]',
+    # Cobblestone Stairs - Upside-down (Bedrock: uses stone_stairs, upside_down_bit=true for top)
+    'Cobblestone Stairs (North, Upside-down)': 'minecraft:stone_stairs["upside_down_bit"=true,"weirdo_direction"=2]',
+    'Cobblestone Stairs (South, Upside-down)': 'minecraft:stone_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
+    'Cobblestone Stairs (East, Upside-down)': 'minecraft:stone_stairs["upside_down_bit"=true,"weirdo_direction"=1]',
+    'Cobblestone Stairs (West, Upside-down)': 'minecraft:stone_stairs["upside_down_bit"=true,"weirdo_direction"=0]',
 
     # Stone Brick Stairs - Normal (Bedrock: upside_down_bit=false for normal, weirdo_direction for facing)
-    'Stone Brick Stairs (North)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
-    'Stone Brick Stairs (South)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
-    'Stone Brick Stairs (East)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
-    'Stone Brick Stairs (West)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
-    'Stone Brick Stairs (North, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
-    'Stone Brick Stairs (South, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
-    'Stone Brick Stairs (East, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
-    'Stone Brick Stairs (West, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
+    'Stone Brick Stairs (North)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
+    'Stone Brick Stairs (South)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
+    'Stone Brick Stairs (East)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
+    'Stone Brick Stairs (West)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
+    'Stone Brick Stairs (North, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
+    'Stone Brick Stairs (South, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
+    'Stone Brick Stairs (East, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
+    'Stone Brick Stairs (West, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
 
     # Stone Brick Stairs - Upside-down (Bedrock: upside_down_bit=true for top)
-    'Stone Brick Stairs (North, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=1]',
-    'Stone Brick Stairs (South, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=0]',
-    'Stone Brick Stairs (East, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
-    'Stone Brick Stairs (West, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=2]',
+    'Stone Brick Stairs (North, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=2]',
+    'Stone Brick Stairs (South, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
+    'Stone Brick Stairs (East, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=1]',
+    'Stone Brick Stairs (West, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=0]',
 }
 
 
@@ -368,13 +368,15 @@ def get_block_id(material: str) -> str:
             base_name = block_name.split('(')[0].strip('_')
         else:
             base_name = block_name.strip('_')
-        # Map common wood types
+        # Map common wood types and stone variants
         base_name = base_name.replace('oak_wood_stairs', 'oak_stairs')
         base_name = base_name.replace('spruce_wood_stairs', 'spruce_stairs')
         base_name = base_name.replace('birch_wood_stairs', 'birch_stairs')
         base_name = base_name.replace('jungle_wood_stairs', 'jungle_stairs')
         base_name = base_name.replace('acacia_wood_stairs', 'acacia_stairs')
         base_name = base_name.replace('dark_oak_wood_stairs', 'dark_oak_stairs')
+        # Bedrock uses stone_stairs, not cobblestone_stairs
+        base_name = base_name.replace('cobblestone_stairs', 'stone_stairs')
         # Add default Bedrock state
         return f'minecraft:{base_name}["upside_down_bit"=false,"weirdo_direction"=3]'
 

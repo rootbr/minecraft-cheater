@@ -80,8 +80,17 @@ Hardcoded constants in `main.rs`:
 # Apply coordinate offsets
 ./target/release/mc-commander --offset-x 100 --offset-y 64 --offset-z -50
 
-# Combine file, skip and offset
-./target/release/mc-commander -f tower.txt --skip 500 --offset-x 100 --offset-y 70 --offset-z 200
+# Filter by material (only execute commands containing specific string)
+# Note: Filter is applied AFTER skip
+./target/release/mc-commander --material stone_stairs
+./target/release/mc-commander -m oak_stairs
+
+# Combine skip and filter: skip first 100 commands, then filter by material
+# Example: Skip first 100, then build only oak_stairs from remaining commands
+./target/release/mc-commander --skip 100 -m oak_stairs
+
+# Full combination: file, skip, offset and filter
+./target/release/mc-commander -f tower.txt --skip 500 --offset-x 100 --offset-y 70 --offset-z 200 -m stone
 
 # Generate staircase
 ./target/release/mc-commander staircase
@@ -89,10 +98,19 @@ Hardcoded constants in `main.rs`:
 
 **Options:**
 - `--file FILE` (or `-f FILE`) - Command file to execute (default: build_commands_optimized.txt)
-- `--skip N` (or `-s N`) - Skip first N commands (also disables area clearing)
+- `--skip N` (or `-s N`) - Skip first N commands (disables area clearing)
+- `--material STRING` (or `-m STRING`) - Filter commands by material (applied AFTER skip, disables area clearing)
 - `--offset-x N` - X coordinate offset (default: 0)
 - `--offset-y N` - Y coordinate offset (default: 0)
 - `--offset-z N` - Z coordinate offset (default: 0)
+
+**Execution order:**
+1. Read commands from file
+2. Calculate bounding box and clear commands (based on all commands)
+3. Apply `--skip` (skip first N commands)
+4. Apply `--material` filter (filter remaining commands by material)
+5. Execute clear commands (only if skip=0 and no material filter)
+6. Execute filtered commands with coordinate offsets
 
 **Note:** When using `--skip` to resume an interrupted build, the area clearing step is automatically skipped since the area was already cleared during the initial run.
 

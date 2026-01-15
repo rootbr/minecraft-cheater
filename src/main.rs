@@ -327,6 +327,10 @@ struct Cli {
     #[arg(short, long, default_value = "build_commands_optimized.txt")]
     file: String,
 
+    /// Filter commands by material (only execute commands containing this string)
+    #[arg(short = 'm', long)]
+    material: Option<String>,
+
     /// Disable feedback detection and use fixed delays (fallback mode)
     #[arg(long, default_value_t = false)]
     no_feedback: bool,
@@ -455,9 +459,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Vec::new()
     };
 
-    // Apply skip
+    // Apply skip first
     let skip_count = cli.skip;
-    let commands_to_execute: Vec<String> = if skip_count > 0 {
+    let mut commands_after_skip: Vec<String> = if skip_count > 0 {
         if skip_count >= commands.len() {
             println!("Skip count ({}) >= total commands ({}). Nothing to execute.", skip_count, commands.len());
             return Ok(());
@@ -468,8 +472,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         commands
     };
 
+    // Apply material filter after skip
+    let commands_to_execute: Vec<String> = if let Some(ref material_filter) = cli.material {
+        let before_filter = commands_after_skip.len();
+        commands_after_skip.retain(|cmd| cmd.contains(material_filter));
+        println!("Фильтр по материалу '{}': {} команд из {} прошли фильтр",
+                 material_filter, commands_after_skip.len(), before_filter);
+        commands_after_skip
+    } else {
+        commands_after_skip
+    };
+
     let total_commands = commands_to_execute.len();
-    println!("Команд к выполнению: {} (начиная с #{})", total_commands, skip_count + 1);
+    println!("Команд к выполнению: {}", total_commands);
 
     // Show offset info if any offset is non-zero
     if cli.offset_x != 0 || cli.offset_y != 0 || cli.offset_z != 0 {
@@ -535,8 +550,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut enigo = Enigo::new(&Settings::default())?;
     let mut clipboard = Clipboard::new()?;
 
-    // Execute clear commands first (only if not resuming with --skip)
-    if !clear_commands.is_empty() && skip_count == 0 {
+    // Execute clear commands first (only if building full structure: no skip, no filter)
+    let should_clear = skip_count == 0 && cli.material.is_none();
+    if !clear_commands.is_empty() && should_clear {
         println!("\n=== Очистка области ===");
         for (i, command) in clear_commands.iter().enumerate() {
             let command_with_offset = execute_command(
@@ -552,8 +568,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("[clear {}/{}] {}", i + 1, clear_commands.len(), command_with_offset);
         }
         println!("Очистка завершена!\n");
-    } else if !clear_commands.is_empty() && skip_count > 0 {
-        println!("\nℹ Пропускаю очистку области (используется --skip)\n");
+    } else if !clear_commands.is_empty() {
+        if skip_count > 0 {
+            println!("\nℹ Пропускаю очистку области (используется --skip)\n");
+        } else if cli.material.is_some() {
+            println!("\nℹ Пропускаю очистку области (используется --material фильтр)\n");
+        }
     }
 
     println!("=== Строительство ===");
