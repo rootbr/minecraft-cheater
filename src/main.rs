@@ -78,7 +78,7 @@ fn execute_command_once(
 ) -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("  [1] Копирую команду в буфер обмена...");
     clipboard.set_text(command_with_offset)?;
-
+    thread::sleep(Duration::from_millis(75));
     // Open chat
     eprintln!("  [2] Нажимаю T для открытия чата...");
     enigo.key(Key::Unicode('t'), Click)?;
@@ -101,15 +101,16 @@ fn execute_command_once(
 
     // Paste command
     eprintln!("  [4] Вставляю команду (Cmd+V)...");
+    thread::sleep(Duration::from_millis(100));
     enigo.key(Key::Meta, Press)?;
-    thread::sleep(Duration::from_millis(50));
+    thread::sleep(Duration::from_millis(100));
     enigo.key(Key::Unicode('v'), Click)?;
-    thread::sleep(Duration::from_millis(50));
+    thread::sleep(Duration::from_millis(100));
     enigo.key(Key::Meta, Release)?;
 
     // Execute command
     eprintln!("  [5] Нажимаю Enter...");
-    thread::sleep(Duration::from_millis(50));
+    thread::sleep(Duration::from_millis(75));
     enigo.key(Key::Return, Click)?;
 
     // Check command result and wait for chat close

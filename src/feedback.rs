@@ -266,7 +266,7 @@ impl FeedbackDetector {
 
         let start = Instant::now();
         let poll_interval = Duration::from_millis(50); // Simple 200ms polling
-        let timeout = Duration::from_secs(1); // 2 second timeout
+        let timeout = Duration::from_secs(2); // 2 second timeout
 
         loop {
             match self.detect_chat_state() {
