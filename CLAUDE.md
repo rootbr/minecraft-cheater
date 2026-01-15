@@ -131,12 +131,6 @@ python3 optimize_commands.py input.txt
 
 # With output file
 python3 optimize_commands.py input.txt output.txt
-
-# Apply offset
-python3 optimize_commands.py input.txt -x 100 -y 64 -z 200
-
-# Offset only (no optimization)
-python3 optimize_commands.py input.txt --no-fill -y 10
 ```
 
 ### Command Optimization
