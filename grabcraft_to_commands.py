@@ -313,15 +313,14 @@ def is_attachable_block(material: str) -> bool:
     return False
 
 
-def generate_commands(blocks: list[dict], offset_x: int = 0, offset_y: int = 0,
-                      offset_z: int = 0) -> list[str]:
+def generate_commands(blocks: list[dict]) -> list[str]:
     """Generate Minecraft /setblock commands for all blocks."""
     commands = []
     attachable_commands = []
 
     for b in blocks:
         block_id = get_block_id(b['material'])
-        cmd = f'/setblock {b["x"] + offset_x} {b["y"] + offset_y} {b["z"] + offset_z} {block_id}'
+        cmd = f'/setblock {b["x"]} {b["y"]} {b["z"]} {block_id}'
         if is_attachable_block(b['material']):
             attachable_commands.append(cmd)
         else:
@@ -340,9 +339,6 @@ def generate_commands(blocks: list[dict], offset_x: int = 0, offset_y: int = 0,
 def main():
     page_url = 'https://www.grabcraft.com/minecraft/oakshire-wall-tower/military-buildings'
     output_file = 'build_commands.txt'
-    offset_x = 0
-    offset_y = 0
-    offset_z = 0
     save_csv = False
     csv_file = 'blocks.csv'
 
@@ -361,29 +357,18 @@ def main():
             print()
             print('Options:')
             print('  -o FILE             Output file (default: build_commands.txt)')
-            print('  -x N                X offset (default: 0)')
-            print('  -y N                Y offset (default: 0)')
-            print('  -z N                Z offset (default: 0)')
             print('  --save-csv [FILE]   Save blocks to CSV file (default: blocks.csv)')
             print()
             print('Examples:')
             print('  python3 grabcraft_to_commands.py https://www.grabcraft.com/minecraft/tower/...')
-            print('  python3 grabcraft_to_commands.py <URL> -o tower.txt -y 70')
+            print('  python3 grabcraft_to_commands.py <URL> -o tower.txt')
             print('  python3 grabcraft_to_commands.py <URL> --save-csv blocks.csv')
             print()
+            print('Note: Use --offset-x/y/z in mc-commander CLI to apply coordinate offsets.')
             print('Use optimize_commands.py to apply /fill optimization after generation.')
             sys.exit(0)
         elif args[i] == '-o' and i + 1 < len(args):
             output_file = args[i + 1]
-            i += 2
-        elif args[i] == '-x' and i + 1 < len(args):
-            offset_x = int(args[i + 1])
-            i += 2
-        elif args[i] == '-y' and i + 1 < len(args):
-            offset_y = int(args[i + 1])
-            i += 2
-        elif args[i] == '-z' and i + 1 < len(args):
-            offset_z = int(args[i + 1])
             i += 2
         elif args[i] == '--save-csv':
             save_csv = True
@@ -416,8 +401,8 @@ def main():
         print(f'\nSaved blocks to {csv_file}')
 
     # Generate commands
-    print(f'\nGenerating commands with offset ({offset_x}, {offset_y}, {offset_z})')
-    commands = generate_commands(blocks, offset_x, offset_y, offset_z)
+    print('\nGenerating commands...')
+    commands = generate_commands(blocks)
 
     # Write output
     with open(output_file, 'w', encoding='utf-8') as f:
@@ -426,6 +411,7 @@ def main():
 
     print(f'Generated {len(commands)} commands to {output_file}')
     print(f'  /setblock commands: {len(commands)}')
+    print('\nNote: Use mc-commander with --offset-x/y/z to apply coordinate offsets when executing.')
 
 
 if __name__ == '__main__':

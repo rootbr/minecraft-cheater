@@ -44,9 +44,11 @@ cargo build --release
 ### Command Execution Flow
 
 1. Generate or load commands from `build_commands.mcfunction`
-2. Wait 5 seconds for user to switch to Minecraft window
-3. For each command:
-   - Copy to clipboard
+2. Apply coordinate offsets (if specified via `--offset-x/y/z`)
+3. Wait 5 seconds for user to switch to Minecraft window
+4. For each command:
+   - Apply offset to coordinates
+   - Copy modified command to clipboard
    - Press `T` to open chat
    - Paste with Cmd+V
    - Press Enter to execute
@@ -71,9 +73,21 @@ Hardcoded constants in `main.rs`:
 ./target/release/mc-commander --skip 600
 ./target/release/mc-commander -s 600
 
+# Apply coordinate offsets
+./target/release/mc-commander --offset-x 100 --offset-y 64 --offset-z -50
+
+# Combine skip and offset
+./target/release/mc-commander --skip 500 --offset-x 100 --offset-y 70 --offset-z 200
+
 # Generate staircase
 ./target/release/mc-commander staircase
 ```
+
+**Options:**
+- `--skip N` (or `-s N`) - Skip first N commands
+- `--offset-x N` - X coordinate offset (default: 0)
+- `--offset-y N` - Y coordinate offset (default: 0)
+- `--offset-z N` - Z coordinate offset (default: 0)
 
 ## File Structure
 
@@ -90,31 +104,21 @@ build_commands.mcfunction    # Command input file (generated or manual)
 
 ### grabcraft_to_commands.py
 
-Converts blueprints from [GrabCraft.com](https://www.grabcraft.com) to Minecraft Bedrock Edition commands.
+Converts blueprints from [GrabCraft.com](https://www.grabcraft.com) to Minecraft Bedrock Edition commands with base coordinates (no offset applied).
 
 ```bash
 # Basic usage
 python3 grabcraft_to_commands.py <URL>
 
-# With offset
-python3 grabcraft_to_commands.py <URL> -x 100 -y 70 -z -50
-
 # Custom output file
 python3 grabcraft_to_commands.py <URL> -o my_tower.mcfunction
-
-# No optimization (setblock only)
-python3 grabcraft_to_commands.py <URL> --no-fill
 
 # Save CSV for analysis
 python3 grabcraft_to_commands.py <URL> --save-csv blocks.csv
 ```
 
 **Options:**
-- `-o FILE` - Output file (default: build_commands.mcfunction)
-- `-x N` - X offset (default: 0)
-- `-y N` - Y offset (default: 64, sea level)
-- `-z N` - Z offset (default: 0)
-- `--no-fill` - Use only /setblock commands
+- `-o FILE` - Output file (default: build_commands.txt)
 - `--save-csv [FILE]` - Save blocks to CSV
 
 ### optimize_commands.py

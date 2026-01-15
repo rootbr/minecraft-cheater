@@ -14,6 +14,91 @@ use std::time::Duration;
 /// Chunk size for clearing (32x32x32 = 32768 blocks, Bedrock limit)
 const CHUNK_SIZE: i32 = 32;
 
+/// Execute a single Minecraft command via keyboard emulation
+fn execute_command(
+    command: &str,
+    offset_x: i32,
+    offset_y: i32,
+    offset_z: i32,
+    enigo: &mut Enigo,
+    clipboard: &mut Clipboard,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let command_with_offset = apply_offset(command, offset_x, offset_y, offset_z);
+    clipboard.set_text(&command_with_offset)?;
+
+    enigo.key(Key::Unicode('t'), Click)?;
+    thread::sleep(Duration::from_millis(700));
+
+    enigo.key(Key::Meta, Press)?;
+    thread::sleep(Duration::from_millis(100));
+    enigo.key(Key::Unicode('v'), Click)?;
+    thread::sleep(Duration::from_millis(100));
+    enigo.key(Key::Meta, Release)?;
+    thread::sleep(Duration::from_millis(50));
+    enigo.key(Key::Return, Click)?;
+    thread::sleep(Duration::from_millis(250));
+
+    Ok(command_with_offset)
+}
+
+/// Apply coordinate offset to a command
+fn apply_offset(command: &str, offset_x: i32, offset_y: i32, offset_z: i32) -> String {
+    // If all offsets are 0, return original command
+    if offset_x == 0 && offset_y == 0 && offset_z == 0 {
+        return command.to_string();
+    }
+
+    let parts: Vec<&str> = command.split_whitespace().collect();
+    if parts.is_empty() {
+        return command.to_string();
+    }
+
+    let cmd_type = parts[0].trim_start_matches('/');
+
+    match cmd_type {
+        "setblock" if parts.len() >= 5 => {
+            if let (Ok(x), Ok(y), Ok(z)) = (
+                parts[1].parse::<i32>(),
+                parts[2].parse::<i32>(),
+                parts[3].parse::<i32>(),
+            ) {
+                let new_x = x + offset_x;
+                let new_y = y + offset_y;
+                let new_z = z + offset_z;
+                let rest = parts[4..].join(" ");
+                format!("/setblock {} {} {} {}", new_x, new_y, new_z, rest)
+            } else {
+                command.to_string()
+            }
+        }
+        "fill" if parts.len() >= 8 => {
+            if let (Ok(x1), Ok(y1), Ok(z1), Ok(x2), Ok(y2), Ok(z2)) = (
+                parts[1].parse::<i32>(),
+                parts[2].parse::<i32>(),
+                parts[3].parse::<i32>(),
+                parts[4].parse::<i32>(),
+                parts[5].parse::<i32>(),
+                parts[6].parse::<i32>(),
+            ) {
+                let new_x1 = x1 + offset_x;
+                let new_y1 = y1 + offset_y;
+                let new_z1 = z1 + offset_z;
+                let new_x2 = x2 + offset_x;
+                let new_y2 = y2 + offset_y;
+                let new_z2 = z2 + offset_z;
+                let rest = parts[7..].join(" ");
+                format!(
+                    "/fill {} {} {} {} {} {} {}",
+                    new_x1, new_y1, new_z1, new_x2, new_y2, new_z2, rest
+                )
+            } else {
+                command.to_string()
+            }
+        }
+        _ => command.to_string(),
+    }
+}
+
 /// Parse coordinates from a command (setblock or fill)
 fn parse_coordinates(cmd: &str) -> Option<Vec<(i32, i32, i32)>> {
     let parts: Vec<&str> = cmd.split_whitespace().collect();
@@ -117,6 +202,18 @@ struct Cli {
     /// Skip first N commands (useful if execution was interrupted)
     #[arg(short, long, default_value_t = 0)]
     skip: usize,
+
+    /// X coordinate offset to apply to all commands
+    #[arg(long, default_value_t = 0)]
+    offset_x: i32,
+
+    /// Y coordinate offset to apply to all commands
+    #[arg(long, default_value_t = 0)]
+    offset_y: i32,
+
+    /// Z coordinate offset to apply to all commands
+    #[arg(long, default_value_t = 0)]
+    offset_z: i32,
 }
 
 #[derive(Subcommand)]
@@ -213,6 +310,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let total_commands = commands_to_execute.len();
     println!("Команд к выполнению: {} (начиная с #{})", total_commands, skip_count + 1);
 
+    // Show offset info if any offset is non-zero
+    if cli.offset_x != 0 || cli.offset_y != 0 || cli.offset_z != 0 {
+        println!("Применяется offset: X={}, Y={}, Z={}", cli.offset_x, cli.offset_y, cli.offset_z);
+    }
+
     let delay_before_start = 5;
     println!("\nУ тебя {} секунд чтобы:", delay_before_start);
     println!("   1. Переключиться на Parallels Desktop");
@@ -231,22 +333,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if !clear_commands.is_empty() {
         println!("\n=== Очистка области ===");
         for (i, command) in clear_commands.iter().enumerate() {
-            println!("[clear {}/{}] {}", i + 1, clear_commands.len(), command);
-            clipboard.set_text(command)?;
-
-            enigo.key(Key::Unicode('t'), Click)?;
-            thread::sleep(Duration::from_millis(700));
-
-            enigo.key(Key::Meta, Press)?;
-            thread::sleep(Duration::from_millis(100));
-            enigo.key(Key::Unicode('v'), Click)?;
-            thread::sleep(Duration::from_millis(100));
-            enigo.key(Key::Meta, Release)?;
-            thread::sleep(Duration::from_millis(50));
-            enigo.key(Key::Return, Click)?;
-            thread::sleep(Duration::from_millis(250));
-            // enigo.key(Key::Escape, Click)?;
-            // thread::sleep(Duration::from_millis(100));
+            let command_with_offset = execute_command(
+                command,
+                cli.offset_x,
+                cli.offset_y,
+                cli.offset_z,
+                &mut enigo,
+                &mut clipboard,
+            )?;
+            println!("[clear {}/{}] {}", i + 1, clear_commands.len(), command_with_offset);
         }
         println!("Очистка завершена!\n");
     }
@@ -254,22 +349,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Строительство ===");
     for (i, command) in commands_to_execute.iter().enumerate() {
         let actual_index = skip_count + i + 1;
-        println!("[{}/{}] {}", actual_index, skip_count + total_commands, command);
-        clipboard.set_text(command)?;
-
-        enigo.key(Key::Unicode('t'), Click)?;
-        thread::sleep(Duration::from_millis(700));
-
-        enigo.key(Key::Meta, Press)?;
-        thread::sleep(Duration::from_millis(100));
-        enigo.key(Key::Unicode('v'), Click)?;
-        thread::sleep(Duration::from_millis(100));
-        enigo.key(Key::Meta, Release)?;
-        thread::sleep(Duration::from_millis(50));
-        enigo.key(Key::Return, Click)?;
-        thread::sleep(Duration::from_millis(250));
-        // enigo.key(Key::Escape, Click)?;
-        // thread::sleep(Duration::from_millis(100));
+        let command_with_offset = execute_command(
+            command,
+            cli.offset_x,
+            cli.offset_y,
+            cli.offset_z,
+            &mut enigo,
+            &mut clipboard,
+        )?;
+        println!("[{}/{}] {}", actual_index, skip_count + total_commands, command_with_offset);
     }
 
     println!();
