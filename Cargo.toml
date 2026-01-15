@@ -7,3 +7,12 @@ edition = "2021"
 enigo = "0.2"
 arboard = "3.4"
 clap = { version = "4.5", features = ["derive"] }
+
+# Screenshot capture (portable alternative)
+scrap = "0.5"
+
+# Image processing for pixel detection
+image = "0.24"
+
+# Error handling
+thiserror = "1.0"

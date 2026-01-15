@@ -1,6 +1,8 @@
+mod feedback;
 mod staircase;
 
 use arboard::Clipboard;
+use feedback::{CommandResult, FeedbackDetector};
 use clap::{Parser, Subcommand};
 use enigo::{
     Direction::{Click, Press, Release},
@@ -22,21 +24,57 @@ fn execute_command(
     offset_z: i32,
     enigo: &mut Enigo,
     clipboard: &mut Clipboard,
+    mut detector: Option<&mut FeedbackDetector>,
+    no_feedback: bool,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let command_with_offset = apply_offset(command, offset_x, offset_y, offset_z);
     clipboard.set_text(&command_with_offset)?;
 
+    // Open chat
     enigo.key(Key::Unicode('t'), Click)?;
-    thread::sleep(Duration::from_millis(700));
 
+    // Wait for chat to open
+    if !no_feedback && detector.is_some() {
+        let _ = detector.as_mut().unwrap().wait_for_chat_open();
+    } else {
+        // Fallback to fixed delay
+        thread::sleep(Duration::from_millis(700));
+    }
+
+    // Paste command
     enigo.key(Key::Meta, Press)?;
-    thread::sleep(Duration::from_millis(100));
+    thread::sleep(Duration::from_millis(50));
     enigo.key(Key::Unicode('v'), Click)?;
-    thread::sleep(Duration::from_millis(100));
+    thread::sleep(Duration::from_millis(50));
     enigo.key(Key::Meta, Release)?;
+
+    // Execute command
     thread::sleep(Duration::from_millis(50));
     enigo.key(Key::Return, Click)?;
-    thread::sleep(Duration::from_millis(250));
+
+    // Check command result and wait for chat close
+    if !no_feedback && detector.is_some() {
+        let det = detector.as_mut().unwrap();
+
+        match det.read_command_response() {
+            Ok(CommandResult::Success) => {}
+            Ok(CommandResult::Error(err)) => {
+                eprintln!("⚠ Command execution error: {}", err);
+            }
+            Ok(CommandResult::Unknown) => {
+                // No response detected, assume success
+            }
+            Err(e) => {
+                eprintln!("⚠ Failed to read command response: {}", e);
+            }
+        }
+
+        // Wait for chat to close
+        let _ = det.wait_for_chat_close();
+    } else {
+        // Fallback to fixed delay
+        thread::sleep(Duration::from_millis(250));
+    }
 
     Ok(command_with_offset)
 }
@@ -214,6 +252,18 @@ struct Cli {
     /// Z coordinate offset to apply to all commands
     #[arg(long, default_value_t = 0)]
     offset_z: i32,
+
+    /// Disable feedback detection and use fixed delays (fallback mode)
+    #[arg(long, default_value_t = false)]
+    no_feedback: bool,
+
+    /// Maximum retry attempts for chat open detection (default: 50 = ~1000ms)
+    #[arg(long, default_value_t = 50)]
+    max_retries: u32,
+
+    /// Poll interval in milliseconds for state detection
+    #[arg(long, default_value_t = 10)]
+    poll_interval: u64,
 }
 
 #[derive(Subcommand)]
@@ -256,7 +306,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         None => {
             // Default: read from commands.txt
-            BufReader::new(File::open("build_commands_optimized.txt")?)
+            BufReader::new(File::open("build_commands.txt")?)
                 .lines()
                 .filter_map(|line| line.ok())
                 .filter(|line| {
@@ -315,15 +365,60 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Применяется offset: X={}, Y={}, Z={}", cli.offset_x, cli.offset_y, cli.offset_z);
     }
 
+    // Initialize feedback detector BEFORE countdown (unless disabled)
+    let mut detector = if !cli.no_feedback {
+        let retry_config = feedback::RetryConfig {
+            max_attempts_open: cli.max_retries,     // For chat open
+            max_attempts_close: 20,                 // Fixed at 20 for chat close (~300ms)
+            initial_delay_ms: 5,
+            poll_interval_ms: cli.poll_interval,
+        };
+
+        match FeedbackDetector::with_config(retry_config) {
+            Ok(det) => {
+                if det.is_enabled() {
+                    println!("✓ Feedback detection enabled (smart timing)");
+                } else {
+                    println!("⚠ Feedback detection unavailable, using fixed delays");
+                }
+                Some(det)
+            }
+            Err(e) => {
+                eprintln!("⚠ Failed to initialize feedback detector: {}", e);
+                eprintln!("  Falling back to fixed delays");
+                None
+            }
+        }
+    } else {
+        println!("ℹ Feedback detection disabled (--no-feedback), using fixed delays");
+        None
+    };
+
     let delay_before_start = 5;
     println!("\nУ тебя {} секунд чтобы:", delay_before_start);
     println!("   1. Переключиться на Parallels Desktop");
     println!("   2. Кликнуть в окно Minecraft");
-    println!("   3. Убедиться что чат закрыт (нажми Esc)");
+    println!("   3. ВАЖНО: Расположи окно Minecraft в НИЖНИЙ ЛЕВЫЙ угол экрана!");
+    println!("   4. Убедиться что чат закрыт (нажми Esc)");
     println!();
-    for i in (1..=delay_before_start).rev() {
-        println!("Начинаю через {}...", i);
-        thread::sleep(Duration::from_secs(1));
+
+    // Show live preview during countdown
+    if let Some(ref mut det) = detector {
+        if det.is_enabled() {
+            let _ = det.show_live_preview(delay_before_start as u32);
+        } else {
+            // No feedback - just countdown
+            for i in (1..=delay_before_start).rev() {
+                println!("Начинаю через {}...", i);
+                thread::sleep(Duration::from_secs(1));
+            }
+        }
+    } else {
+        // No detector - just countdown
+        for i in (1..=delay_before_start).rev() {
+            println!("Начинаю через {}...", i);
+            thread::sleep(Duration::from_secs(1));
+        }
     }
 
     let mut enigo = Enigo::new(&Settings::default())?;
@@ -340,6 +435,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 cli.offset_z,
                 &mut enigo,
                 &mut clipboard,
+                detector.as_mut(),
+                cli.no_feedback,
             )?;
             println!("[clear {}/{}] {}", i + 1, clear_commands.len(), command_with_offset);
         }
@@ -356,6 +453,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             cli.offset_z,
             &mut enigo,
             &mut clipboard,
+            detector.as_mut(),
+            cli.no_feedback,
         )?;
         println!("[{}/{}] {}", actual_index, skip_count + total_commands, command_with_offset);
     }
