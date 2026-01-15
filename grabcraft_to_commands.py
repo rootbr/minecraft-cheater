@@ -27,6 +27,15 @@ MATERIAL_TO_BLOCK = {
     'Oak Wood': 'minecraft:oak_log',
     'Oak Wood Plank': 'minecraft:oak_planks',
     'Spruce Wood': 'minecraft:spruce_log',
+    'Spruce Wood Plank': 'minecraft:spruce_planks',
+    'Birch Wood': 'minecraft:birch_log',
+    'Birch Wood Plank': 'minecraft:birch_planks',
+    'Jungle Wood': 'minecraft:jungle_log',
+    'Jungle Wood Plank': 'minecraft:jungle_planks',
+    'Acacia Wood': 'minecraft:acacia_log',
+    'Acacia Wood Plank': 'minecraft:acacia_planks',
+    'Dark Oak Wood': 'minecraft:dark_oak_log',
+    'Dark Oak Wood Plank': 'minecraft:dark_oak_planks',
     'Iron Block': 'minecraft:iron_block',
     'Glowstone': 'minecraft:glowstone',
 
@@ -95,6 +104,23 @@ MATERIAL_TO_BLOCK = {
     'Vines (South&West)': 'minecraft:vine["vine_direction_bits"=3]',
     'Vines (South&East)': 'minecraft:vine["vine_direction_bits"=9]',
 
+    # Doors (Bedrock Edition: oak_door -> wooden_door, direction 0-3, upper_block_bit)
+    # Note: Doors have 2 blocks - lower (upper_block_bit=false) and upper (upper_block_bit=true)
+    'Oak Door (Lower)': 'minecraft:wooden_door["direction"=2,"open_bit"=false,"upper_block_bit"=false]',
+    'Oak Door (Upper)': 'minecraft:wooden_door["direction"=2,"open_bit"=false,"upper_block_bit"=true]',
+    'Spruce Door (Lower)': 'minecraft:spruce_door["direction"=2,"open_bit"=false,"upper_block_bit"=false]',
+    'Spruce Door (Upper)': 'minecraft:spruce_door["direction"=2,"open_bit"=false,"upper_block_bit"=true]',
+    'Birch Door (Lower)': 'minecraft:birch_door["direction"=2,"open_bit"=false,"upper_block_bit"=false]',
+    'Birch Door (Upper)': 'minecraft:birch_door["direction"=2,"open_bit"=false,"upper_block_bit"=true]',
+    'Jungle Door (Lower)': 'minecraft:jungle_door["direction"=2,"open_bit"=false,"upper_block_bit"=false]',
+    'Jungle Door (Upper)': 'minecraft:jungle_door["direction"=2,"open_bit"=false,"upper_block_bit"=true]',
+    'Acacia Door (Lower)': 'minecraft:acacia_door["direction"=2,"open_bit"=false,"upper_block_bit"=false]',
+    'Acacia Door (Upper)': 'minecraft:acacia_door["direction"=2,"open_bit"=false,"upper_block_bit"=true]',
+    'Dark Oak Door (Lower)': 'minecraft:dark_oak_door["direction"=2,"open_bit"=false,"upper_block_bit"=false]',
+    'Dark Oak Door (Upper)': 'minecraft:dark_oak_door["direction"=2,"open_bit"=false,"upper_block_bit"=true]',
+    'Iron Door (Lower)': 'minecraft:iron_door["direction"=2,"open_bit"=false,"upper_block_bit"=false]',
+    'Iron Door (Upper)': 'minecraft:iron_door["direction"=2,"open_bit"=false,"upper_block_bit"=true]',
+
     # Chests (Bedrock Edition uses numeric facing_direction)
     'Chest (North)': 'minecraft:chest["facing_direction"=2]',
     'Chest (South)': 'minecraft:chest["facing_direction"=3]',
@@ -107,12 +133,12 @@ MATERIAL_TO_BLOCK = {
     'Ladder (facing east)': 'minecraft:ladder["facing_direction"=5]',
     'Ladder (facing west)': 'minecraft:ladder["facing_direction"=4]',
 
-    # Torches
+    # Torches (Bedrock: all torches use minecraft:torch, not wall_torch)
     'Torch (Facing Up)': 'minecraft:torch',
-    'Torch (Facing North)': 'minecraft:wall_torch["facing_direction"=2]',
-    'Torch (Facing South)': 'minecraft:wall_torch["facing_direction"=3]',
-    'Torch (Facing East)': 'minecraft:wall_torch["facing_direction"=5]',
-    'Torch (Facing West)': 'minecraft:wall_torch["facing_direction"=4]',
+    'Torch (Facing North)': 'minecraft:torch["facing_direction"=2]',
+    'Torch (Facing South)': 'minecraft:torch["facing_direction"=3]',
+    'Torch (Facing East)': 'minecraft:torch["facing_direction"=5]',
+    'Torch (Facing West)': 'minecraft:torch["facing_direction"=4]',
 
     # Oak Wood Stairs - Normal (Bedrock: upside_down_bit=false for normal, weirdo_direction for facing)
     'Oak Wood Stairs (North, Normal)': 'minecraft:oak_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
@@ -283,6 +309,24 @@ def get_block_id(material: str) -> str:
 
     # Try to auto-convert unknown materials
     block_name = material.lower().replace(' ', '_')
+
+    # Fix common naming issues
+    # GrabCraft uses "wood_plank" but Bedrock uses "planks"
+    block_name = block_name.replace('_wood_plank', '_planks')
+    block_name = block_name.replace('wood_plank', 'planks')
+
+    # Special handling for doors
+    if 'door' in block_name.lower() and 'oak_door' in block_name:
+        # Bedrock uses wooden_door for oak doors
+        block_name = block_name.replace('oak_door', 'wooden_door')
+        # Add default door state if not present
+        if '[' not in block_name:
+            # Check if upper or lower part
+            if 'upper' in material.lower():
+                block_name += '["direction"=2,"open_bit"=false,"upper_block_bit"=true]'
+            else:
+                block_name += '["direction"=2,"open_bit"=false,"upper_block_bit"=false]'
+        return f'minecraft:{block_name}'
 
     # Special handling for stairs with default orientation
     if 'stairs' in block_name.lower():

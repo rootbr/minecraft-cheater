@@ -322,6 +322,10 @@ struct Cli {
     #[arg(long, default_value_t = 0)]
     offset_z: i32,
 
+    /// Command file to execute (default: build_commands_optimized.txt)
+    #[arg(short, long, default_value = "build_commands_optimized.txt")]
+    file: String,
+
     /// Disable feedback detection and use fixed delays (fallback mode)
     #[arg(long, default_value_t = false)]
     no_feedback: bool,
@@ -410,8 +414,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             unreachable!("TestEsc handled above")
         }
         None => {
-            // Default: read from commands.txt
-            BufReader::new(File::open("build_commands_optimized.txt")?)
+            // Default: read from specified file
+            println!("Читаю команды из файла: {}", cli.file);
+            BufReader::new(File::open(&cli.file)?)
                 .lines()
                 .filter_map(|line| line.ok())
                 .filter(|line| {

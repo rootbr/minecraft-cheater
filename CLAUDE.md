@@ -43,7 +43,7 @@ cargo build --release
 
 ### Command Execution Flow
 
-1. Generate or load commands from `build_commands.mcfunction`
+1. Load commands from file (default: `build_commands_optimized.txt`, configurable via `--file`)
 2. Apply coordinate offsets (if specified via `--offset-x/y/z`)
 3. Wait 5 seconds for user to switch to Minecraft window
 4. For each command:
@@ -52,7 +52,7 @@ cargo build --release
    - Press `T` to open chat
    - Paste with Cmd+V
    - Press Enter to execute
-   - Press Escape to close chat
+   - Automatic detection of chat state for optimal timing
 
 ### Configuration
 
@@ -66,8 +66,12 @@ Hardcoded constants in `main.rs`:
 ## CLI Usage
 
 ```bash
-# Run from file (default: build_commands.mcfunction)
+# Run from file (default: build_commands_optimized.txt)
 ./target/release/mc-commander
+
+# Specify custom command file
+./target/release/mc-commander --file build_commands.txt
+./target/release/mc-commander -f garden.mcfunction
 
 # Skip first N commands (resume interrupted build)
 ./target/release/mc-commander --skip 600
@@ -76,14 +80,15 @@ Hardcoded constants in `main.rs`:
 # Apply coordinate offsets
 ./target/release/mc-commander --offset-x 100 --offset-y 64 --offset-z -50
 
-# Combine skip and offset
-./target/release/mc-commander --skip 500 --offset-x 100 --offset-y 70 --offset-z 200
+# Combine file, skip and offset
+./target/release/mc-commander -f tower.txt --skip 500 --offset-x 100 --offset-y 70 --offset-z 200
 
 # Generate staircase
 ./target/release/mc-commander staircase
 ```
 
 **Options:**
+- `--file FILE` (or `-f FILE`) - Command file to execute (default: build_commands_optimized.txt)
 - `--skip N` (or `-s N`) - Skip first N commands
 - `--offset-x N` - X coordinate offset (default: 0)
 - `--offset-y N` - Y coordinate offset (default: 0)
