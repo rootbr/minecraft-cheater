@@ -534,8 +534,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut enigo = Enigo::new(&Settings::default())?;
     let mut clipboard = Clipboard::new()?;
 
-    // Execute clear commands first
-    if !clear_commands.is_empty() {
+    // Execute clear commands first (only if not resuming with --skip)
+    if !clear_commands.is_empty() && skip_count == 0 {
         println!("\n=== Очистка области ===");
         for (i, command) in clear_commands.iter().enumerate() {
             let command_with_offset = execute_command(
@@ -551,6 +551,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("[clear {}/{}] {}", i + 1, clear_commands.len(), command_with_offset);
         }
         println!("Очистка завершена!\n");
+    } else if !clear_commands.is_empty() && skip_count > 0 {
+        println!("\nℹ Пропускаю очистку области (используется --skip)\n");
     }
 
     println!("=== Строительство ===");

@@ -73,7 +73,7 @@ Hardcoded constants in `main.rs`:
 ./target/release/mc-commander --file build_commands.txt
 ./target/release/mc-commander -f garden.mcfunction
 
-# Skip first N commands (resume interrupted build)
+# Skip first N commands (resume interrupted build - skips area clearing)
 ./target/release/mc-commander --skip 600
 ./target/release/mc-commander -s 600
 
@@ -89,10 +89,12 @@ Hardcoded constants in `main.rs`:
 
 **Options:**
 - `--file FILE` (or `-f FILE`) - Command file to execute (default: build_commands_optimized.txt)
-- `--skip N` (or `-s N`) - Skip first N commands
+- `--skip N` (or `-s N`) - Skip first N commands (also disables area clearing)
 - `--offset-x N` - X coordinate offset (default: 0)
 - `--offset-y N` - Y coordinate offset (default: 0)
 - `--offset-z N` - Z coordinate offset (default: 0)
+
+**Note:** When using `--skip` to resume an interrupted build, the area clearing step is automatically skipped since the area was already cleared during the initial run.
 
 ## File Structure
 
@@ -162,7 +164,7 @@ minecraft:oak_stairs["upside_down_bit"=false,"weirdo_direction"=0]
 ```
 
 - `upside_down_bit`: `false` = normal, `true` = upside-down
-- `weirdo_direction`: 0=west, 1=east, 2=north, 3=south
+- `weirdo_direction`: 1=north, 0=south, 2=west, 3=east
 
 Supported: oak, spruce, birch, jungle, acacia, dark_oak, cobblestone, stone_brick
 
@@ -178,12 +180,12 @@ minecraft:stone_slab["minecraft:vertical_half"="bottom"]
 ### Ladders / Torches / Chests
 
 ```
-minecraft:ladder["facing_direction"=2]
-minecraft:wall_torch["facing_direction"=3]
-minecraft:chest["facing_direction"=5]
+minecraft:ladder["facing_direction"=0]
+minecraft:wall_torch["facing_direction"=1]
+minecraft:chest["facing_direction"=2]
 ```
 
-- `facing_direction`: 2=north, 3=south, 4=west, 5=east
+- `facing_direction`: 0=north, 1=south, 3=west, 2=east
 
 ### Logs (with axis)
 
@@ -237,7 +239,7 @@ minecraft:vine["vine_direction_bits"=4]
 
 **Interrupted build:**
 - Note the last command number
-- Resume with `--skip <number>`
+- Resume with `--skip <number>` (area clearing will be automatically skipped)
 
 **Stop execution:**
 - Press Ctrl+C in terminal

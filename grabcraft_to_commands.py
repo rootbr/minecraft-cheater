@@ -121,64 +121,65 @@ MATERIAL_TO_BLOCK = {
     'Iron Door (Lower)': 'minecraft:iron_door["direction"=2,"open_bit"=false,"upper_block_bit"=false]',
     'Iron Door (Upper)': 'minecraft:iron_door["direction"=2,"open_bit"=false,"upper_block_bit"=true]',
 
-    # Chests (Bedrock Edition uses numeric facing_direction)
-    'Chest (North)': 'minecraft:chest["facing_direction"=2]',
-    'Chest (South)': 'minecraft:chest["facing_direction"=3]',
-    'Chest (East)': 'minecraft:chest["facing_direction"=5]',
-    'Chest (West)': 'minecraft:chest["facing_direction"=4]',
+    # Chests (Bedrock Edition uses numeric facing_direction: 0=north, 1=south, 3=west, 2=east)
+    'Chest (North)': 'minecraft:chest["facing_direction"=0]',
+    'Chest (South)': 'minecraft:chest["facing_direction"=1]',
+    'Chest (East)': 'minecraft:chest["facing_direction"=2]',
+    'Chest (West)': 'minecraft:chest["facing_direction"=3]',
 
-    # Ladders (Bedrock Edition uses numeric facing_direction: 2=north, 3=south, 4=west, 5=east)
-    'Ladder (facing north)': 'minecraft:ladder["facing_direction"=2]',
-    'Ladder (facing south)': 'minecraft:ladder["facing_direction"=3]',
-    'Ladder (facing east)': 'minecraft:ladder["facing_direction"=5]',
-    'Ladder (facing west)': 'minecraft:ladder["facing_direction"=4]',
+    # Ladders (Bedrock Edition uses numeric facing_direction: 0=north, 1=south, 3=west, 2=east)
+    'Ladder (facing north)': 'minecraft:ladder["facing_direction"=0]',
+    'Ladder (facing south)': 'minecraft:ladder["facing_direction"=1]',
+    'Ladder (facing east)': 'minecraft:ladder["facing_direction"=2]',
+    'Ladder (facing west)': 'minecraft:ladder["facing_direction"=3]',
 
     # Torches (Bedrock: all torches use minecraft:torch, not wall_torch)
     'Torch (Facing Up)': 'minecraft:torch',
-    'Torch (Facing North)': 'minecraft:torch["facing_direction"=2]',
-    'Torch (Facing South)': 'minecraft:torch["facing_direction"=3]',
-    'Torch (Facing East)': 'minecraft:torch["facing_direction"=5]',
-    'Torch (Facing West)': 'minecraft:torch["facing_direction"=4]',
+    'Torch (Facing North)': 'minecraft:torch',
+    'Torch (Facing South)': 'minecraft:torch',
+    'Torch (Facing East)': 'minecraft:torch',
+    'Torch (Facing West)': 'minecraft:torch',
 
     # Oak Wood Stairs - Normal (Bedrock: upside_down_bit=false for normal, weirdo_direction for facing)
-    'Oak Wood Stairs (North, Normal)': 'minecraft:oak_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
-    'Oak Wood Stairs (South, Normal)': 'minecraft:oak_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
-    'Oak Wood Stairs (East, Normal)': 'minecraft:oak_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
-    'Oak Wood Stairs (West, Normal)': 'minecraft:oak_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
+    #  weirdo_direction: 1=north, 0=south, 2=west, 3=east)
+    'Oak Wood Stairs (North, Normal)': 'minecraft:oak_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
+    'Oak Wood Stairs (South, Normal)': 'minecraft:oak_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
+    'Oak Wood Stairs (East, Normal)': 'minecraft:oak_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
+    'Oak Wood Stairs (West, Normal)': 'minecraft:oak_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
 
     # Oak Wood Stairs - Upside-down (Bedrock: upside_down_bit=true for top)
-    'Oak Wood Stairs (North, Upside-down)': 'minecraft:oak_stairs["upside_down_bit"=true,"weirdo_direction"=2]',
-    'Oak Wood Stairs (South, Upside-down)': 'minecraft:oak_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
-    'Oak Wood Stairs (East, Upside-down)': 'minecraft:oak_stairs["upside_down_bit"=true,"weirdo_direction"=1]',
-    'Oak Wood Stairs (West, Upside-down)': 'minecraft:oak_stairs["upside_down_bit"=true,"weirdo_direction"=0]',
+    'Oak Wood Stairs (North, Upside-down)': 'minecraft:oak_stairs["upside_down_bit"=true,"weirdo_direction"=1]',
+    'Oak Wood Stairs (South, Upside-down)': 'minecraft:oak_stairs["upside_down_bit"=true,"weirdo_direction"=0]',
+    'Oak Wood Stairs (East, Upside-down)': 'minecraft:oak_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
+    'Oak Wood Stairs (West, Upside-down)': 'minecraft:oak_stairs["upside_down_bit"=true,"weirdo_direction"=2]',
 
     # Cobblestone Stairs - Normal (Bedrock: upside_down_bit=false for normal, weirdo_direction for facing)
-    'Cobblestone Stairs (North, Normal)': 'minecraft:cobblestone_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
-    'Cobblestone Stairs (South, Normal)': 'minecraft:cobblestone_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
-    'Cobblestone Stairs (East, Normal)': 'minecraft:cobblestone_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
-    'Cobblestone Stairs (West, Normal)': 'minecraft:cobblestone_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
+    'Cobblestone Stairs (North, Normal)': 'minecraft:cobblestone_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
+    'Cobblestone Stairs (South, Normal)': 'minecraft:cobblestone_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
+    'Cobblestone Stairs (East, Normal)': 'minecraft:cobblestone_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
+    'Cobblestone Stairs (West, Normal)': 'minecraft:cobblestone_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
 
     # Cobblestone Stairs - Upside-down (Bedrock: upside_down_bit=true for top)
-    'Cobblestone Stairs (North, Upside-down)': 'minecraft:cobblestone_stairs["upside_down_bit"=true,"weirdo_direction"=2]',
-    'Cobblestone Stairs (South, Upside-down)': 'minecraft:cobblestone_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
-    'Cobblestone Stairs (East, Upside-down)': 'minecraft:cobblestone_stairs["upside_down_bit"=true,"weirdo_direction"=1]',
-    'Cobblestone Stairs (West, Upside-down)': 'minecraft:cobblestone_stairs["upside_down_bit"=true,"weirdo_direction"=0]',
+    'Cobblestone Stairs (North, Upside-down)': 'minecraft:cobblestone_stairs["upside_down_bit"=true,"weirdo_direction"=1]',
+    'Cobblestone Stairs (South, Upside-down)': 'minecraft:cobblestone_stairs["upside_down_bit"=true,"weirdo_direction"=0]',
+    'Cobblestone Stairs (East, Upside-down)': 'minecraft:cobblestone_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
+    'Cobblestone Stairs (West, Upside-down)': 'minecraft:cobblestone_stairs["upside_down_bit"=true,"weirdo_direction"=2]',
 
     # Stone Brick Stairs - Normal (Bedrock: upside_down_bit=false for normal, weirdo_direction for facing)
-    'Stone Brick Stairs (North)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
-    'Stone Brick Stairs (South)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
-    'Stone Brick Stairs (East)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
-    'Stone Brick Stairs (West)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
-    'Stone Brick Stairs (North, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
-    'Stone Brick Stairs (South, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
-    'Stone Brick Stairs (East, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
-    'Stone Brick Stairs (West, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
+    'Stone Brick Stairs (North)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
+    'Stone Brick Stairs (South)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
+    'Stone Brick Stairs (East)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
+    'Stone Brick Stairs (West)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
+    'Stone Brick Stairs (North, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
+    'Stone Brick Stairs (South, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
+    'Stone Brick Stairs (East, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
+    'Stone Brick Stairs (West, Normal)': 'minecraft:stone_brick_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
 
     # Stone Brick Stairs - Upside-down (Bedrock: upside_down_bit=true for top)
-    'Stone Brick Stairs (North, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=2]',
-    'Stone Brick Stairs (South, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
-    'Stone Brick Stairs (East, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=1]',
-    'Stone Brick Stairs (West, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=0]',
+    'Stone Brick Stairs (North, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=1]',
+    'Stone Brick Stairs (South, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=0]',
+    'Stone Brick Stairs (East, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
+    'Stone Brick Stairs (West, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=2]',
 }
 
 
