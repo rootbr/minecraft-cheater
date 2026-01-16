@@ -98,7 +98,7 @@ fn execute_command_once(
         thread::sleep(Duration::from_millis(700));
         eprintln!("  [3] Использую фиксированную задержку (no feedback)");
     }
-
+    thread::sleep(Duration::from_millis(200));
     // Paste command
     eprintln!("  [4] Вставляю команду (Cmd+V)...");
     thread::sleep(Duration::from_millis(100));

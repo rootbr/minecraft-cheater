@@ -25,6 +25,8 @@ MATERIAL_TO_BLOCK = {
     'Grass': 'minecraft:grass_block',
     'Dirt': 'minecraft:dirt',
     'Oak Wood': 'minecraft:oak_log',
+    'Oak Wood (facing north/south)': 'minecraft:oak_log["pillar_axis"="y"]',
+    'Oak Wood (facing east/west)': 'minecraft:oak_log["pillar_axis"="x"]',
     'Oak Wood Plank': 'minecraft:oak_planks',
     'Spruce Wood': 'minecraft:spruce_log',
     'Spruce Wood Plank': 'minecraft:spruce_planks',
@@ -34,10 +36,29 @@ MATERIAL_TO_BLOCK = {
     'Jungle Wood Plank': 'minecraft:jungle_planks',
     'Acacia Wood': 'minecraft:acacia_log',
     'Acacia Wood Plank': 'minecraft:acacia_planks',
+    'Acacia Leaves': 'minecraft:acacia_leaves["persistent_bit"=true]',
+    'Acacia Leaves (No Decay)': 'minecraft:acacia_leaves["persistent_bit"=true]',
+    'Acacia Leaves (No Decay and Check Decay)': 'minecraft:acacia_leaves["persistent_bit"=true]',
     'Dark Oak Wood': 'minecraft:dark_oak_log',
     'Dark Oak Wood Plank': 'minecraft:dark_oak_planks',
     'Iron Block': 'minecraft:iron_block',
     'Glowstone': 'minecraft:glowstone',
+    'Glass': 'minecraft:glass',
+    'Quartz Block': 'minecraft:quartz_block',
+    'Bookshelf': 'minecraft:bookshelf',
+    'Beacon': 'minecraft:beacon',
+    'Iron Bars': 'minecraft:iron_bars',
+    'Rail': 'minecraft:rail',
+    'Rail (curved; north and east)': 'minecraft:rail',
+    'Rail (curved; south and east)': 'minecraft:rail',
+    'Rail (curved; north and west)': 'minecraft:rail',
+    'Rail (curved; south and west)': 'minecraft:rail',
+    'Flower Pot': 'minecraft:flower_pot',
+    'Flower (Rose Bush, Lower)': 'minecraft:rose_bush',
+    'Flower (Lilac, Upper)': 'minecraft:lilac',
+    'Flower (Sunflower, Upper)': 'minecraft:sunflower',
+    'Dandelion Flower Pot': 'minecraft:flower_pot',
+    'Cobblestone Wall': 'minecraft:cobblestone_wall',
 
     # Wool
     'White Wool': 'minecraft:white_wool',
@@ -57,6 +78,24 @@ MATERIAL_TO_BLOCK = {
     'Magenta Wool': 'minecraft:magenta_wool',
     'Pink Wool': 'minecraft:pink_wool',
 
+    # Terracotta (Stained Clay)
+    'White Stained Clay': 'minecraft:white_terracotta',
+    'Black Stained Clay': 'minecraft:black_terracotta',
+    'Gray Stained Clay': 'minecraft:gray_terracotta',
+    'Light Gray Stained Clay': 'minecraft:light_gray_terracotta',
+    'Brown Stained Clay': 'minecraft:brown_terracotta',
+    'Red Stained Clay': 'minecraft:red_terracotta',
+    'Orange Stained Clay': 'minecraft:orange_terracotta',
+    'Yellow Stained Clay': 'minecraft:yellow_terracotta',
+    'Lime Stained Clay': 'minecraft:lime_terracotta',
+    'Green Stained Clay': 'minecraft:green_terracotta',
+    'Cyan Stained Clay': 'minecraft:cyan_terracotta',
+    'Light Blue Stained Clay': 'minecraft:light_blue_terracotta',
+    'Blue Stained Clay': 'minecraft:blue_terracotta',
+    'Purple Stained Clay': 'minecraft:purple_terracotta',
+    'Magenta Stained Clay': 'minecraft:magenta_terracotta',
+    'Pink Stained Clay': 'minecraft:pink_terracotta',
+
     # Fences
     'Oak Fence': 'minecraft:oak_fence',
     'Spruce Fence': 'minecraft:spruce_fence',
@@ -67,6 +106,7 @@ MATERIAL_TO_BLOCK = {
 
     # Slabs (Bedrock: top_slot_bit determines position)
     'Stone Slab': 'minecraft:stone_slab["minecraft:vertical_half"="bottom"]',
+    'Stone Slab (Upper)': 'minecraft:stone_slab["minecraft:vertical_half"="top"]',
     'Stone Brick Slab': 'minecraft:stone_brick_slab["minecraft:vertical_half"="bottom"]',
     'Cobblestone Slab': 'minecraft:cobblestone_slab["minecraft:vertical_half"="bottom"]',
     'Wooden Slab': 'minecraft:oak_slab["minecraft:vertical_half"="bottom"]',
@@ -180,6 +220,30 @@ MATERIAL_TO_BLOCK = {
     'Stone Brick Stairs (South, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
     'Stone Brick Stairs (East, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=1]',
     'Stone Brick Stairs (West, Upside-down)': 'minecraft:stone_brick_stairs["upside_down_bit"=true,"weirdo_direction"=0]',
+
+    # Acacia Wood Stairs - Normal
+    'Acacia Wood Stairs (North, Normal)': 'minecraft:acacia_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
+    'Acacia Wood Stairs (South, Normal)': 'minecraft:acacia_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
+    'Acacia Wood Stairs (East, Normal)': 'minecraft:acacia_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
+    'Acacia Wood Stairs (West, Normal)': 'minecraft:acacia_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
+
+    # Acacia Wood Stairs - Upside-down
+    'Acacia Wood Stairs (North, Upside-down)': 'minecraft:acacia_stairs["upside_down_bit"=true,"weirdo_direction"=0]',
+    'Acacia Wood Stairs (South, Upside-down)': 'minecraft:acacia_stairs["upside_down_bit"=true,"weirdo_direction"=1]',
+    'Acacia Wood Stairs (East, Upside-down)': 'minecraft:acacia_stairs["upside_down_bit"=true,"weirdo_direction"=2]',
+    'Acacia Wood Stairs (West, Upside-down)': 'minecraft:acacia_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
+
+    # Quartz Stairs - Normal
+    'Quartz Stairs (North, Normal)': 'minecraft:quartz_stairs["upside_down_bit"=false,"weirdo_direction"=0]',
+    'Quartz Stairs (South, Normal)': 'minecraft:quartz_stairs["upside_down_bit"=false,"weirdo_direction"=1]',
+    'Quartz Stairs (East, Normal)': 'minecraft:quartz_stairs["upside_down_bit"=false,"weirdo_direction"=2]',
+    'Quartz Stairs (West, Normal)': 'minecraft:quartz_stairs["upside_down_bit"=false,"weirdo_direction"=3]',
+
+    # Quartz Stairs - Upside-down
+    'Quartz Stairs (North, Upside-down)': 'minecraft:quartz_stairs["upside_down_bit"=true,"weirdo_direction"=0]',
+    'Quartz Stairs (South, Upside-down)': 'minecraft:quartz_stairs["upside_down_bit"=true,"weirdo_direction"=1]',
+    'Quartz Stairs (East, Upside-down)': 'minecraft:quartz_stairs["upside_down_bit"=true,"weirdo_direction"=2]',
+    'Quartz Stairs (West, Upside-down)': 'minecraft:quartz_stairs["upside_down_bit"=true,"weirdo_direction"=3]',
 }
 
 
