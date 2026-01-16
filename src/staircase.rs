@@ -1,5 +1,34 @@
 // Staircase with landing and turnaround generator
 
+// Staircase defaults
+const START_X: i32 = 94;
+const START_Y: i32 = 131;
+const START_Z: i32 = 86;
+const DIRECTION: &str = "south";
+const MATERIAL: &str = "spark:light_blue_decorative_tile";
+const FLIGHT_HEIGHT: i32 = 6;
+const WIDTH: i32 = 2;
+const WALL_MATERIAL: Option<&str> = Some("spark:brown_decorative_tile");
+const LANTERN: Option<&str> = Some("sea_lantern");
+const LANTERN_INTERVAL: i32 = 2;
+
+pub fn generate_commands() -> Vec<String> {
+    let cfg = StaircaseConfig {
+        direction: DIRECTION,
+        material: MATERIAL,
+        x: START_X,
+        y: START_Y,
+        z: START_Z,
+        flight_height: FLIGHT_HEIGHT,
+        width: WIDTH,
+        wall_material: WALL_MATERIAL,
+        lantern: LANTERN,
+        lantern_interval: LANTERN_INTERVAL,
+    };
+
+    generate_staircase(&cfg)
+}
+
 /// Staircase configuration
 pub struct StaircaseConfig<'a> {
     pub direction: &'a str,
