@@ -12,6 +12,16 @@ use crate::feedback::{ChatState, FeedbackDetector};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
+#[cfg(target_os = "macos")]
+const CHAT_KEY: Key = Key::Other(17); // 't' keycode on macOS
+#[cfg(not(target_os = "macos"))]
+const CHAT_KEY: Key = Key::Unicode('t');
+
+#[cfg(target_os = "macos")]
+const PASTE_KEY: Key = Key::Other(9); // 'v' keycode on macOS
+#[cfg(not(target_os = "macos"))]
+const PASTE_KEY: Key = Key::Unicode('v');
+
 pub struct CommandExecutor {
     enigo: Enigo,
     clipboard: Clipboard,
@@ -48,7 +58,7 @@ impl CommandExecutor {
 
     fn open_chat(&mut self) -> Result<()> {
         loop {
-            self.enigo.key(Key::Unicode('t'), Click)?;
+            self.enigo.key(CHAT_KEY, Click)?;
             let state = self.detector.wait_for_state(ChatState::Open, Timing::state_timeout());
             if matches!(state, ChatState::Open) {
                 break;
@@ -62,7 +72,8 @@ impl CommandExecutor {
             thread::sleep(Timing::key_press_delay());
             self.enigo.key(Key::Meta, Press)?;
             thread::sleep(Timing::key_press_delay());
-            self.enigo.key(Key::Unicode('v'), Click)?;
+
+            self.enigo.key(PASTE_KEY, Click)?;
             thread::sleep(Timing::key_press_delay());
             self.enigo.key(Key::Meta, Release)?;
 
