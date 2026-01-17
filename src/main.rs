@@ -115,8 +115,16 @@ fn execute_build_phase(
     let total = skip_count + commands.len();
     for (i, command) in commands.iter().enumerate() {
         let cmd = apply_offset(command, offset);
-        executor.execute(&cmd)?;
-        println!("[{}/{}] {}", skip_count + i + 1, total, cmd);
+        let stats = executor.execute(&cmd)?;
+        
+        print!("[{}/{}] {}", skip_count + i + 1, total, cmd);
+        if let Some(s) = stats {
+            println!(" ({}ms {}/{}/{} iterations)", 
+                s.total_time.as_millis(), 
+                s.iterations[0], s.iterations[1], s.iterations[2]);
+        } else {
+            println!();
+        }
     }
     Ok(())
 }

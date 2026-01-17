@@ -13,6 +13,12 @@ pub enum ChatState {
     Undefined,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct WaitStats {
+    pub elapsed: Duration,
+    pub iterations: i32,
+}
+
 pub struct FeedbackDetector {
     capturer: Capturer,
     width: usize,
@@ -58,59 +64,33 @@ impl FeedbackDetector {
         DynamicImage::ImageRgba8(img)
     }
 
-
     /// Wait for expected chat state, return last state on timeout
-    pub fn wait_for_state(&mut self, expected: ChatState, timeout: Duration) -> ChatState {
+    pub fn wait_for_state(&mut self, expected: ChatState, timeout: Duration) -> (ChatState, WaitStats) {
         let start = Instant::now();
         let mut iteration = 0;
         loop {
             iteration += 1;
             let elapsed = start.elapsed();
 
-            if self.check_state_with_debug(expected, iteration, elapsed) {
-                println!("✓ Chat state {:?} (detected in {:?}, {} iterations)", expected, elapsed, iteration);
-                return expected;
+            if self.check_state(expected) {
+                return (expected, WaitStats { elapsed, iterations: iteration });
             }
 
             if elapsed >= timeout {
                 let actual = self.detect_chat_state();
                 println!("⏱ Timeout after {:?} ({} iterations), expected {:?}, got {:?}",
                     elapsed, iteration, expected, actual);
-                return actual;
+                return (actual, WaitStats { elapsed, iterations: iteration });
             }
             thread::sleep(Timing::poll_interval());
         }
     }
 
-    fn check_state_with_debug(&mut self, expected: ChatState, iteration: i32, elapsed: Duration) -> bool {
+    fn check_state(&mut self, expected: ChatState) -> bool {
         match expected {
-            ChatState::Open => {
-                if self.check_region(self.command_region) != ChatState::Open {
-                    if elapsed.as_millis() > 500 {
-                        println!("Итерация {}: [{:?}] ChatState::Open не совпало: не все пиксели (198,198,198)", iteration, elapsed);
-                    }
-                    return false;
-                }
-                true
-            }
-            ChatState::CommandEntered => {
-                if self.check_region(self.command_region) != ChatState::CommandEntered {
-                    if elapsed.as_millis() > 500 {
-                        println!("Итерация {}: [{:?}] ChatState::CommandEntered не совпало: не все пиксели (117,117,117)", iteration, elapsed);
-                    }
-                    return false;
-                }
-                true
-            }
-            ChatState::Closed => {
-                if self.check_region(self.health_region) != ChatState::Closed {
-                    if elapsed.as_millis() > 500 {
-                        println!("Итерация {}: [{:?}] ChatState::Closed не совпало", iteration, elapsed);
-                    }
-                    return false;
-                }
-                true
-            }
+            ChatState::Open => self.check_region(self.command_region) == ChatState::Open,
+            ChatState::CommandEntered => self.check_region(self.command_region) == ChatState::CommandEntered,
+            ChatState::Closed => self.check_region(self.health_region) == ChatState::Closed,
             ChatState::Undefined => false,
         }
     }

@@ -52,8 +52,15 @@ pub fn execute_clear(
 
     for (i, command) in clear_commands.iter().enumerate() {
         let cmd = apply_offset(command, offset);
-        executor.execute(&cmd)?;
-        println!("[clear {}/{}] {}", i + 1, clear_commands.len(), cmd);
+        let stats = executor.execute(&cmd)?;
+        print!("[clear {}/{}] {}", i + 1, clear_commands.len(), cmd);
+        if let Some(s) = stats {
+            println!(" ({}ms {}/{}/{} iterations)", 
+                s.total_time.as_millis(), 
+                s.iterations[0], s.iterations[1], s.iterations[2]);
+        } else {
+            println!();
+        }
     }
     println!("Очистка завершена!\n");
 

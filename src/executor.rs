@@ -6,11 +6,17 @@ use enigo::{
     Enigo, Key, Keyboard, Settings,
 };
 use std::thread;
+use std::time::{Duration, Instant};
 
 use crate::config::Timing;
-use crate::feedback::{ChatState, FeedbackDetector};
+use crate::feedback::{ChatState, FeedbackDetector, WaitStats};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+pub struct CommandStats {
+    pub total_time: Duration,
+    pub iterations: [i32; 3],
+}
 
 #[cfg(target_os = "macos")]
 const CHAT_KEY: Key = Key::Other(17); // 't' keycode on macOS
@@ -37,18 +43,28 @@ impl CommandExecutor {
         Ok(Self { enigo, clipboard, detector })
     }
 
-    pub fn execute(&mut self, command: &str) -> Result<()> {
-        if let Err(e) = self.execute_once(command) {
-            eprintln!("⚠ Команда пропущена: {}", e);
+    pub fn execute(&mut self, command: &str) -> Result<Option<CommandStats>> {
+        match self.execute_once(command) {
+            Ok(stats) => Ok(Some(stats)),
+            Err(e) => {
+                eprintln!("⚠ Команда пропущена: {}", e);
+                Ok(None)
+            }
         }
-        Ok(())
     }
 
-    fn execute_once(&mut self, command: &str) -> Result<()> {
+    fn execute_once(&mut self, command: &str) -> Result<CommandStats> {
         self.copy_to_clipboard(command)?;
-        self.open_chat()?;
-        self.paste_command()?;
-        self.send_command()
+        let start = Instant::now();
+        let s1 = self.open_chat()?;
+        let s2 = self.paste_command()?;
+        let s3 = self.send_command()?;
+        let total_time = start.elapsed();
+
+        Ok(CommandStats {
+            total_time,
+            iterations: [s1.iterations, s2.iterations, s3.iterations],
+        })
     }
 
     fn copy_to_clipboard(&mut self, command: &str) -> Result<()> {
@@ -56,18 +72,20 @@ impl CommandExecutor {
         Ok(())
     }
 
-    fn open_chat(&mut self) -> Result<()> {
+    fn open_chat(&mut self) -> Result<WaitStats> {
+        let mut total_iterations = 0;
         loop {
             self.enigo.key(CHAT_KEY, Click)?;
-            let state = self.detector.wait_for_state(ChatState::Open, Timing::state_timeout());
+            let (state, stats) = self.detector.wait_for_state(ChatState::Open, Timing::state_timeout());
+            total_iterations += stats.iterations;
             if matches!(state, ChatState::Open) {
-                break;
+                return Ok(WaitStats { elapsed: stats.elapsed, iterations: total_iterations });
             }
         }
-        Ok(())
     }
 
-    fn paste_command(&mut self) -> Result<()> {
+    fn paste_command(&mut self) -> Result<WaitStats> {
+        let mut total_iterations = 0;
         loop {
             thread::sleep(Timing::key_press_delay());
             self.enigo.key(Key::Meta, Press)?;
@@ -77,23 +95,24 @@ impl CommandExecutor {
             thread::sleep(Timing::key_press_delay());
             self.enigo.key(Key::Meta, Release)?;
 
-            let state = self.detector.wait_for_state(ChatState::CommandEntered, Timing::state_timeout());
+            let (state, stats) = self.detector.wait_for_state(ChatState::CommandEntered, Timing::state_timeout());
+            total_iterations += stats.iterations;
             if matches!(state, ChatState::CommandEntered) {
-                break;
+                return Ok(WaitStats { elapsed: stats.elapsed, iterations: total_iterations });
             }
         }
-        Ok(())
     }
 
-    fn send_command(&mut self) -> Result<()> {
+    fn send_command(&mut self) -> Result<WaitStats> {
+        let mut total_iterations = 0;
         loop {
             self.enigo.key(Key::Return, Click)?;
-            let state = self.detector.wait_for_state(ChatState::Closed, Timing::state_timeout());
+            let (state, stats) = self.detector.wait_for_state(ChatState::Closed, Timing::state_timeout());
+            total_iterations += stats.iterations;
             if matches!(state, ChatState::Closed) {
-                break;
+                return Ok(WaitStats { elapsed: stats.elapsed, iterations: total_iterations });
             }
         }
-        Ok(())
     }
 
     pub fn show_countdown(&mut self, seconds: u64) {
