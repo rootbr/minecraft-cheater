@@ -47,13 +47,44 @@ impl FeedbackDetector {
             thread::sleep(Duration::from_millis(1));
         };
 
-        // Convert BGRA to RGBA
-        let rgba_data: Vec<u8> = frame
-            .chunks_exact(4)
-            .flat_map(|bgra| [bgra[2], bgra[1], bgra[0], bgra[3]])
-            .collect();
+        let mut rgba_data = Vec::with_capacity(frame.len());
+        for bgra in frame.chunks_exact(4) {
+            rgba_data.extend_from_slice(&[bgra[2], bgra[1], bgra[0], bgra[3]]);
+        }
 
         let img = image::RgbaImage::from_raw(self.width as u32, self.height as u32, rgba_data)
+            .expect("Failed to create image");
+
+        DynamicImage::ImageRgba8(img)
+    }
+
+    fn capture_region(&mut self, region: (u32, u32, u32, u32)) -> DynamicImage {
+        let (rx, ry, rw, rh) = region;
+        let frame = loop {
+            if let Ok(frame) = self.capturer.frame() {
+                break frame;
+            }
+            thread::sleep(Duration::from_millis(1));
+        };
+
+        let mut rgba_data = Vec::with_capacity((rw * rh * 4) as usize);
+        let stride = self.width * 4;
+
+        for y in ry..(ry + rh) {
+            let row_start = (y as usize) * stride;
+            for x in rx..(rx + rw) {
+                let pixel_start = row_start + (x as usize) * 4;
+                if pixel_start + 3 < frame.len() {
+                    let b = frame[pixel_start];
+                    let g = frame[pixel_start + 1];
+                    let r = frame[pixel_start + 2];
+                    let a = frame[pixel_start + 3];
+                    rgba_data.extend_from_slice(&[r, g, b, a]);
+                }
+            }
+        }
+
+        let img = image::RgbaImage::from_raw(rw, rh, rgba_data)
             .expect("Failed to create image");
 
         DynamicImage::ImageRgba8(img)
@@ -82,19 +113,33 @@ impl FeedbackDetector {
         }
     }
 
-    fn check_state(&mut self, expected: ChatState) -> bool {
+    fn check_state_with_debug(&mut self, expected: ChatState, iteration: i32, elapsed: Duration) -> bool {
         match expected {
             ChatState::Open => {
-                let region = self.crop_region(self.command_region);
-                region.pixels().all(|p| Self::rgb_matches(&p.2, 117, 117, 117, 5))
+                let region = self.capture_region(self.command_region);
+                for (x, y, p) in region.pixels() {
+                    if !Self::rgb_matches(&p, 117, 117, 117, 5) {
+                        if elapsed.as_millis() > 500 {
+                            println!("Итерация {}: [{:?}] ChatState::Open не совпало в ({}, {}): ожидалось (117,117,117), получено {:?}", iteration, elapsed, x, y, p);
+                        }
+                        return false;
+                    }
+                }
+                true
             }
             ChatState::CommandEntered => {
-                let region = self.crop_region(self.command_region);
-                // region.pixels().all(|p| Self::rgb_matches(&p.2, 198, 198, 198, 5))
-                region.pixels().any(|p| !Self::rgb_matches(&p.2, 117, 117, 117, 5))
+                let region = self.capture_region(self.command_region);
+                let any_mismatch = region.pixels().any(|p| !Self::rgb_matches(&p.2, 117, 117, 117, 5));
+                if !any_mismatch {
+                    if elapsed.as_millis() > 500 {
+                        println!("Итерация {}: [{:?}] ChatState::CommandEntered не совпало: все пиксели серые (117,117,117), команда не обнаружена", iteration, elapsed);
+                    }
+                    return false;
+                }
+                true
             }
             ChatState::Closed => {
-                let region = self.crop_region(self.health_region);
+                let region = self.capture_region(self.health_region);
                 let mut has_heart = false;
                 let mut has_health = false;
                 for pixel in region.pixels() {
@@ -105,35 +150,39 @@ impl FeedbackDetector {
                         has_health = true;
                     }
                 }
-                has_heart && has_health
+                if !has_heart || !has_health {
+                    if elapsed.as_millis() > 500 {
+                        let missing = if !has_heart && !has_health { "сердце и здоровье" }
+                                     else if !has_heart { "сердце" }
+                                     else { "здоровье" };
+                        println!("Итерация {}: [{:?}] ChatState::Closed не совпало: отсутствует {}", iteration, elapsed, missing);
+                    }
+                    return false;
+                }
+                true
             }
             ChatState::Undefined => false,
         }
     }
 
-    fn crop_region(&mut self, region: (u32, u32, u32, u32)) -> DynamicImage {
-        let screenshot = self.capture_screen();
-        let (x, y, width, height) = region;
-        screenshot.crop_imm(x, y, width, height)
-    }
+
 
     pub fn detect_chat_state(&mut self) -> ChatState {
-        let screenshot = self.capture_screen();
-        if self.is_command_empty(&screenshot) {
+        if self.is_command_empty() {
             return ChatState::Open;
         }
-        if self.is_command_entered(&screenshot) {
+        if self.is_command_entered() {
             return ChatState::CommandEntered;
         }
-        if self.is_closed(&screenshot) {
+        if self.is_closed() {
             return ChatState::Closed;
         }
         ChatState::Undefined
     }
 
-    fn is_closed(&self, screenshot: &DynamicImage) -> bool {
+    fn is_closed(&mut self) -> bool {
         let (x, y, width, height) = self.health_region;
-        let health = screenshot.crop_imm(x, y, width, height);
+        let health = self.capture_region((x, y, width, height));
         let mut has_heart = false;
         let mut has_health = false;
         for pixel in health.pixels() {
@@ -147,15 +196,15 @@ impl FeedbackDetector {
         has_heart && has_health
     }
 
-    fn is_command_empty(&self, screenshot: &DynamicImage) -> bool {
+    fn is_command_empty(&mut self) -> bool {
         let (x, y, width, height) = self.command_region;
-        let command = screenshot.crop_imm(x, y, width, height);
+        let command = self.capture_region((x, y, width, height));
         command.pixels().all(|p| Self::rgb_matches(&p.2, 117, 117, 117, 5))
     }
 
-    fn is_command_entered(&self, screenshot: &DynamicImage) -> bool {
+    fn is_command_entered(&mut self) -> bool {
         let (x, y, width, height) = self.command_region;
-        let command = screenshot.crop_imm(x, y, width, height);
+        let command = self.capture_region((x, y, width, height));
         command.pixels().all(|p| Self::rgb_matches(&p.2, 198, 198, 198, 5))
     }
 
