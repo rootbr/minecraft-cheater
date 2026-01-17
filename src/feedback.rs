@@ -62,14 +62,20 @@ impl FeedbackDetector {
     /// Wait for expected chat state, return last state on timeout
     pub fn wait_for_state(&mut self, expected: ChatState, timeout: Duration) -> ChatState {
         let start = Instant::now();
+        let mut iteration = 0;
         loop {
-            if self.check_state(expected) {
-                println!("✓ Chat state {:?} (detected in {:?})", expected, start.elapsed());
+            iteration += 1;
+            let elapsed = start.elapsed();
+
+            if self.check_state_with_debug(expected, iteration, elapsed) {
+                println!("✓ Chat state {:?} (detected in {:?}, {} iterations)", expected, elapsed, iteration);
                 return expected;
             }
-            if start.elapsed() >= timeout {
+
+            if elapsed >= timeout {
                 let actual = self.detect_chat_state();
-                println!("⏱ Timeout, expected {:?}, got {:?}", expected, actual);
+                println!("⏱ Timeout after {:?} ({} iterations), expected {:?}, got {:?}",
+                    elapsed, iteration, expected, actual);
                 return actual;
             }
             thread::sleep(Timing::poll_interval());
@@ -84,6 +90,7 @@ impl FeedbackDetector {
             }
             ChatState::CommandEntered => {
                 let region = self.crop_region(self.command_region);
+                // region.pixels().all(|p| Self::rgb_matches(&p.2, 198, 198, 198, 5))
                 region.pixels().any(|p| !Self::rgb_matches(&p.2, 117, 117, 117, 5))
             }
             ChatState::Closed => {
