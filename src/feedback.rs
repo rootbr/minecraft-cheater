@@ -63,17 +63,51 @@ impl FeedbackDetector {
     pub fn wait_for_state(&mut self, expected: ChatState, timeout: Duration) -> ChatState {
         let start = Instant::now();
         loop {
-            let state = self.detect_chat_state();
-            if state == expected {
-                println!("✓ Chat state {:?} (detected in {:?})", state, start.elapsed());
-                return state;
+            if self.check_state(expected) {
+                println!("✓ Chat state {:?} (detected in {:?})", expected, start.elapsed());
+                return expected;
             }
             if start.elapsed() >= timeout {
-                println!("⏱ Timeout, last state: {:?}", state);
-                return state;
+                let actual = self.detect_chat_state();
+                println!("⏱ Timeout, expected {:?}, got {:?}", expected, actual);
+                return actual;
             }
             thread::sleep(Timing::poll_interval());
         }
+    }
+
+    fn check_state(&mut self, expected: ChatState) -> bool {
+        match expected {
+            ChatState::Open => {
+                let region = self.crop_region(self.command_region);
+                region.pixels().all(|p| Self::rgb_matches(&p.2, 117, 117, 117, 5))
+            }
+            ChatState::CommandEntered => {
+                let region = self.crop_region(self.command_region);
+                region.pixels().any(|p| !Self::rgb_matches(&p.2, 117, 117, 117, 5))
+            }
+            ChatState::Closed => {
+                let region = self.crop_region(self.health_region);
+                let mut has_heart = false;
+                let mut has_health = false;
+                for pixel in region.pixels() {
+                    let rgba = pixel.2;
+                    if Self::rgb_matches(&rgba, 217, 61, 41, 5) {
+                        has_heart = true;
+                    } else if Self::rgb_matches(&rgba, 148, 235, 58, 5) {
+                        has_health = true;
+                    }
+                }
+                has_heart && has_health
+            }
+            ChatState::Undefined => false,
+        }
+    }
+
+    fn crop_region(&mut self, region: (u32, u32, u32, u32)) -> DynamicImage {
+        let screenshot = self.capture_screen();
+        let (x, y, width, height) = region;
+        screenshot.crop_imm(x, y, width, height)
     }
 
     pub fn detect_chat_state(&mut self) -> ChatState {
@@ -88,12 +122,6 @@ impl FeedbackDetector {
             return ChatState::Closed;
         }
         ChatState::Undefined
-    }
-
-    fn is_open(&self, screenshot: &DynamicImage) -> bool {
-        let (x, y, width, height) = self.panel_region;
-        let panel = screenshot.crop_imm(x, y, width, height);
-        panel.pixels().all(|p| Self::rgb_matches(&p.2, 198, 198, 198, 5))
     }
 
     fn is_closed(&self, screenshot: &DynamicImage) -> bool {

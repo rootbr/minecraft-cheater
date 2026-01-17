@@ -73,7 +73,6 @@ fn execute_commands(cli: &Cli, commands: Vec<String>) -> Result<()> {
         return Ok(());
     }
     let mut executor = CommandExecutor::new()?;
-    print_countdown_instructions();
     executor.show_countdown(COUNTDOWN_SECONDS);
 
     if cli.skip == 0 && cli.material.is_none() {
@@ -105,15 +104,6 @@ fn apply_material_filter(commands: Vec<String>, material: &Option<String>) -> Ve
         }
         None => commands,
     }
-}
-
-fn print_countdown_instructions() {
-    println!("\nУ тебя {} секунд чтобы:", COUNTDOWN_SECONDS);
-    println!("   1. Переключиться на Parallels Desktop");
-    println!("   2. Кликнуть в окно Minecraft");
-    println!("   3. ВАЖНО: Расположи окно Minecraft в НИЖНИЙ ЛЕВЫЙ угол экрана!");
-    println!("   4. Убедиться что чат закрыт (нажми Esc)");
-    println!();
 }
 
 fn execute_build_phase(

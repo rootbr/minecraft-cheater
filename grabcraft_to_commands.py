@@ -394,8 +394,11 @@ def extract_blocks_from_web(page_url: str) -> list[dict]:
 # COMMAND GENERATION FUNCTIONS
 # ============================================================================
 
-def get_block_id(material: str) -> str:
-    """Convert material name to Minecraft block ID."""
+def get_block_id(material: str) -> str | None:
+    """Convert material name to Minecraft block ID. Returns None for invalid materials."""
+    if not material or not material.strip():
+        return None
+
     if material in MATERIAL_TO_BLOCK:
         return MATERIAL_TO_BLOCK[material]
 
@@ -447,12 +450,20 @@ def get_block_id(material: str) -> str:
     # Remove everything after first opening parenthesis for other blocks
     if '(' in block_name:
         block_name = block_name.split('(')[0].strip('_')
+
+    # Validate that we have a valid block name
+    block_name = block_name.strip('_')
+    if not block_name or block_name == '':
+        return None
+
     return f'minecraft:{block_name}'
 
 
 def is_attachable_block(material: str) -> bool:
     """Check if block needs to be attached to another block (place last)."""
     block_id = get_block_id(material)
+    if block_id is None:
+        return False
     attachable = ['ladder', 'torch', 'wall_torch']
     for b in attachable:
         if b in block_id:
@@ -464,9 +475,14 @@ def generate_commands(blocks: list[dict]) -> list[str]:
     """Generate Minecraft /setblock commands for all blocks."""
     commands = []
     attachable_commands = []
+    skipped = 0
 
     for b in blocks:
         block_id = get_block_id(b['material'])
+        if block_id is None:
+            skipped += 1
+            continue
+
         cmd = f'/setblock {b["x"]} {b["y"]} {b["z"]} {block_id}'
         if is_attachable_block(b['material']):
             attachable_commands.append(cmd)
@@ -475,6 +491,9 @@ def generate_commands(blocks: list[dict]) -> list[str]:
 
     # Add attachable blocks at the end (they need support blocks first)
     commands.extend(attachable_commands)
+
+    if skipped > 0:
+        print(f'Skipped {skipped} blocks with invalid/empty materials')
 
     return commands
 

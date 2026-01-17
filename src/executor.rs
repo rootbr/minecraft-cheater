@@ -7,7 +7,7 @@ use enigo::{
 };
 use std::thread;
 
-use crate::config::{Timing, MAX_COMMAND_RETRIES};
+use crate::config::Timing;
 use crate::feedback::{ChatState, FeedbackDetector};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -28,43 +28,9 @@ impl CommandExecutor {
     }
 
     pub fn execute(&mut self, command: &str) -> Result<()> {
-        for attempt in 1..=MAX_COMMAND_RETRIES {
-            match self.execute_once(command) {
-                Ok(_) => return Ok(()),
-                Err(e) => {
-                    if attempt < MAX_COMMAND_RETRIES {
-                        self.handle_retry(attempt, &e)?;
-                    } else {
-                        self.handle_failure(&e)?;
-                        return Err(e);
-                    }
-                }
-            }
+        if let Err(e) = self.execute_once(command) {
+            eprintln!("⚠ Команда пропущена: {}", e);
         }
-        Ok(())
-    }
-
-    fn handle_retry(&mut self, attempt: u32, error: &Box<dyn std::error::Error>) -> Result<()> {
-        eprintln!(
-            "⚠ Попытка {}/{} не удалась: {}. Нажимаю ESC и повторяю...",
-            attempt, MAX_COMMAND_RETRIES, error
-        );
-        self.press_esc_twice()?;
-        thread::sleep(Timing::retry_delay());
-        eprintln!("  → Повторяю команду (попытка {})", attempt + 1);
-        Ok(())
-    }
-
-    fn handle_failure(&mut self, error: &Box<dyn std::error::Error>) -> Result<()> {
-        eprintln!("✗ Команда не выполнена после {} попыток: {}", MAX_COMMAND_RETRIES, error);
-        self.press_esc_twice()
-    }
-
-    fn press_esc_twice(&mut self) -> Result<()> {
-        self.enigo.key(Key::Escape, Click)?;
-        thread::sleep(Timing::key_press_delay());
-        self.enigo.key(Key::Escape, Click)?;
-        thread::sleep(Timing::esc_delay());
         Ok(())
     }
 
@@ -77,7 +43,6 @@ impl CommandExecutor {
 
     fn copy_to_clipboard(&mut self, command: &str) -> Result<()> {
         self.clipboard.set_text(command)?;
-        thread::sleep(Timing::clipboard_delay());
         Ok(())
     }
 
