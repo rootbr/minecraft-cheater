@@ -3,7 +3,7 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-use crate::config::{Offset, CHUNK_SIZE};
+use crate::config::Offset;
 
 #[derive(Clone, Copy)]
 pub struct BoundingBox {
@@ -166,43 +166,4 @@ fn extract_coordinates(cmd: &str) -> Option<Vec<(i32, i32, i32)>> {
         }
         _ => None,
     }
-}
-
-pub fn generate_clear_commands(bbox: BoundingBox) -> Vec<String> {
-    let mut commands = Vec::new();
-    let (min_x, min_y, min_z) = bbox.min;
-    let (max_x, max_y, max_z) = bbox.max;
-
-    let mut x = min_x;
-    while x <= max_x {
-        let x_end = (x + CHUNK_SIZE - 1).min(max_x);
-
-        let mut y = min_y;
-        while y <= max_y {
-            let y_end = (y + CHUNK_SIZE - 1).min(max_y);
-
-            let mut z = min_z;
-            while z <= max_z {
-                let z_end = (z + CHUNK_SIZE - 1).min(max_z);
-
-                commands.push(format!(
-                    "/fill {} {} {} {} {} {} air",
-                    x, y, z, x_end, y_end, z_end
-                ));
-
-                z = z_end + 1;
-            }
-            y = y_end + 1;
-        }
-        x = x_end + 1;
-    }
-
-    commands
-}
-
-pub fn filter_by_material(commands: Vec<String>, material: &str) -> Vec<String> {
-    commands
-        .into_iter()
-        .filter(|cmd| cmd.contains(material))
-        .collect()
 }

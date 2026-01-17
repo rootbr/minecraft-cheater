@@ -70,20 +70,9 @@ impl CommandExecutor {
 
     fn execute_once(&mut self, command: &str) -> Result<()> {
         self.copy_to_clipboard(command)?;
-
-        loop {
-            self.open_chat()?;
-            self.paste_command()?;
-            self.press_enter()?;
-
-            if self.wait_for_chat_close() {
-                break;
-            }
-            self.enigo.key(Key::Escape, Click)?;
-            thread::sleep(Timing::key_press_delay());
-        }
-
-        Ok(())
+        self.open_chat()?;
+        self.paste_command()?;
+        self.send_command()
     }
 
     fn copy_to_clipboard(&mut self, command: &str) -> Result<()> {
@@ -95,10 +84,8 @@ impl CommandExecutor {
     fn open_chat(&mut self) -> Result<()> {
         loop {
             self.enigo.key(Key::Unicode('t'), Click)?;
-
             let state = self.detector.wait_for_state(ChatState::Open, Timing::state_timeout());
-
-            if !matches!(state, ChatState::Closed) {
+            if matches!(state, ChatState::Open) {
                 break;
             }
         }
@@ -106,24 +93,31 @@ impl CommandExecutor {
     }
 
     fn paste_command(&mut self) -> Result<()> {
-        thread::sleep(Timing::key_press_delay());
-        self.enigo.key(Key::Meta, Press)?;
-        thread::sleep(Timing::key_press_delay());
-        self.enigo.key(Key::Unicode('v'), Click)?;
-        thread::sleep(Timing::key_press_delay());
-        self.enigo.key(Key::Meta, Release)?;
+        loop {
+            thread::sleep(Timing::key_press_delay());
+            self.enigo.key(Key::Meta, Press)?;
+            thread::sleep(Timing::key_press_delay());
+            self.enigo.key(Key::Unicode('v'), Click)?;
+            thread::sleep(Timing::key_press_delay());
+            self.enigo.key(Key::Meta, Release)?;
+
+            let state = self.detector.wait_for_state(ChatState::CommandEntered, Timing::state_timeout());
+            if matches!(state, ChatState::CommandEntered) {
+                break;
+            }
+        }
         Ok(())
     }
 
-    fn press_enter(&mut self) -> Result<()> {
-        thread::sleep(Timing::clipboard_delay());
-        self.enigo.key(Key::Return, Click)?;
+    fn send_command(&mut self) -> Result<()> {
+        loop {
+            self.enigo.key(Key::Return, Click)?;
+            let state = self.detector.wait_for_state(ChatState::Closed, Timing::state_timeout());
+            if matches!(state, ChatState::Closed) {
+                break;
+            }
+        }
         Ok(())
-    }
-
-    fn wait_for_chat_close(&mut self) -> bool {
-        let state = self.detector.wait_for_state(ChatState::Closed, Timing::state_timeout());
-        !matches!(state, ChatState::Open)
     }
 
     pub fn show_countdown(&mut self, seconds: u64) {

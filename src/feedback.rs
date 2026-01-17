@@ -3,11 +3,14 @@ use scrap::{Capturer, Display};
 use std::thread;
 use std::time::{Duration, Instant};
 
+use crate::config::Timing;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ChatState {
     Open,
-    Undefined,
+    CommandEntered,
     Closed,
+    Undefined,
 }
 
 pub struct FeedbackDetector {
@@ -16,6 +19,7 @@ pub struct FeedbackDetector {
     height: usize,
     panel_region: (u32, u32, u32, u32), // (x, y, width, height)
     health_region: (u32, u32, u32, u32), // (x, y, width, height)
+    command_region: (u32, u32, u32, u32), // (x, y, width, height)
 }
 
 impl FeedbackDetector {
@@ -30,6 +34,7 @@ impl FeedbackDetector {
             height,
             panel_region: (75, 635, 75, 35),
             health_region: (440, 1355, 200, 20),
+            command_region: (1210, 1390, 25, 45),
         })
     }
 
@@ -57,64 +62,66 @@ impl FeedbackDetector {
     /// Wait for expected chat state, return last state on timeout
     pub fn wait_for_state(&mut self, expected: ChatState, timeout: Duration) -> ChatState {
         let start = Instant::now();
-
         loop {
             let state = self.detect_chat_state();
-
             if state == expected {
                 println!("✓ Chat state {:?} (detected in {:?})", state, start.elapsed());
                 return state;
             }
-
             if start.elapsed() >= timeout {
                 println!("⏱ Timeout, last state: {:?}", state);
                 return state;
             }
-
-            thread::sleep(Duration::from_millis(50));
+            thread::sleep(Timing::poll_interval());
         }
     }
 
     pub fn detect_chat_state(&mut self) -> ChatState {
         let screenshot = self.capture_screen();
-        let (x, y, width, height) = self.panel_region;
-        let panel_area = screenshot.crop_imm(x, y, width, height);
-        if Self::is_open(&panel_area) {
+        if self.is_command_empty(&screenshot) {
             return ChatState::Open;
         }
-        let (x, y, width, height) = self.health_region;
-        let health_area = screenshot.crop_imm(x, y, width, height);
-        if Self::is_closing(&health_area) {
+        if self.is_command_entered(&screenshot) {
+            return ChatState::CommandEntered;
+        }
+        if self.is_closed(&screenshot) {
             return ChatState::Closed;
         }
         ChatState::Undefined
     }
 
-    fn is_open(img: &DynamicImage) -> bool {
-        for pixel in img.pixels() {
-            // Check if NOT gray (198, 198, 198) with ±0 tolerance
-            if !Self::rgb_matches(&pixel.2, 198, 198, 198, 0) {
-                return false;
-            }
-        }
-        true
+    fn is_open(&self, screenshot: &DynamicImage) -> bool {
+        let (x, y, width, height) = self.panel_region;
+        let panel = screenshot.crop_imm(x, y, width, height);
+        panel.pixels().all(|p| Self::rgb_matches(&p.2, 198, 198, 198, 5))
     }
 
-    fn is_closing(img: &DynamicImage) -> bool {
-        let mut heart = false;
-        let mut health = false;
-        for pixel in img.pixels() {
+    fn is_closed(&self, screenshot: &DynamicImage) -> bool {
+        let (x, y, width, height) = self.health_region;
+        let health = screenshot.crop_imm(x, y, width, height);
+        let mut has_heart = false;
+        let mut has_health = false;
+        for pixel in health.pixels() {
             let rgba = pixel.2;
-            // Heart color: (217, 61, 41) with ±2 tolerance
-            if Self::rgb_matches(&rgba, 217, 61, 41, 2) {
-                heart = true;
-            }
-            // Health color: (148, 235, 58) with ±2 tolerance
-            else if Self::rgb_matches(&rgba, 148, 235, 58, 2) {
-                health = true;
+            if Self::rgb_matches(&rgba, 217, 61, 41, 5) {
+                has_heart = true;
+            } else if Self::rgb_matches(&rgba, 148, 235, 58, 5) {
+                has_health = true;
             }
         }
-        heart && health
+        has_heart && has_health
+    }
+
+    fn is_command_empty(&self, screenshot: &DynamicImage) -> bool {
+        let (x, y, width, height) = self.command_region;
+        let command = screenshot.crop_imm(x, y, width, height);
+        command.pixels().all(|p| Self::rgb_matches(&p.2, 117, 117, 117, 5))
+    }
+
+    fn is_command_entered(&self, screenshot: &DynamicImage) -> bool {
+        let (x, y, width, height) = self.command_region;
+        let command = screenshot.crop_imm(x, y, width, height);
+        command.pixels().all(|p| Self::rgb_matches(&p.2, 198, 198, 198, 5))
     }
 
     fn rgb_matches(rgba: &Rgba<u8>, r: u8, g: u8, b: u8, tolerance: u8) -> bool {
@@ -160,7 +167,8 @@ impl FeedbackDetector {
     pub fn show_live_preview(&mut self, seconds: u32) {
         println!("📹 Live preview: Capturing detection regions every second...");
         println!("   🔴 Red box = Chat detection area");
-        println!("   🔵 Blue box = Response detection area");
+        println!("   🔵 Blue box = Health detection area");
+        println!("   🟡 Yellow box = Command detection area");
         println!("   Position your Minecraft window in the bottom-left corner!");
         println!();
 
@@ -177,6 +185,10 @@ impl FeedbackDetector {
             let (resp_x, resp_y, resp_w, resp_h) = self.health_region;
             self.draw_filled_region(&mut img, resp_x, resp_y, resp_w, resp_h, Rgba([0, 0, 255, 60]));
             self.draw_rectangle(&mut img, resp_x, resp_y, resp_w, resp_h, Rgba([0, 0, 255, 255]));
+
+            let (cmd_x, cmd_y, cmd_w, cmd_h) = self.command_region;
+            self.draw_filled_region(&mut img, cmd_x, cmd_y, cmd_w, cmd_h, Rgba([255, 255, 0, 60]));
+            self.draw_rectangle(&mut img, cmd_x, cmd_y, cmd_w, cmd_h, Rgba([255, 255, 0, 255]));
 
             // Save preview
             let output_path = format!("/tmp/mc_preview_{}.png", i);

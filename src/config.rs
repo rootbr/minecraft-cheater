@@ -8,8 +8,9 @@ pub const KEY_PRESS_DELAY_MS: u64 = 100;
 pub const RETRY_DELAY_MS: u64 = 500;
 pub const ESC_DELAY_MS: u64 = 200;
 pub const STATE_TIMEOUT_SECS: u64 = 3;
+pub const POLL_INTERVAL_MS: u64 = 50;
 pub const MAX_COMMAND_RETRIES: u32 = 3;
-pub const COUNTDOWN_SECONDS: u64 = 10;
+pub const COUNTDOWN_SECONDS: u64 = 4;
 
 // Minecraft limits
 pub const CHUNK_SIZE: i32 = 32;
@@ -52,5 +53,9 @@ impl Timing {
 
     pub fn state_timeout() -> Duration {
         Duration::from_secs(STATE_TIMEOUT_SECS)
+    }
+
+    pub fn poll_interval() -> Duration {
+        Duration::from_millis(POLL_INTERVAL_MS)
     }
 }
