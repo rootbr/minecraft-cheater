@@ -56,15 +56,45 @@ impl CommandExecutor {
     fn execute_once(&mut self, command: &str) -> Result<CommandStats> {
         self.copy_to_clipboard(command)?;
         let start = Instant::now();
-        let s1 = self.open_chat()?;
-        let s2 = self.paste_command()?;
-        let s3 = self.send_command()?;
-        let total_time = start.elapsed();
 
-        Ok(CommandStats {
-            total_time,
-            iterations: [s1.iterations, s2.iterations, s3.iterations],
-        })
+        loop {
+            let s1 = match self.open_chat() {
+                Ok(s) => s,
+                Err(_) => {
+                    self.ensure_chat_closed()?;
+                    continue;
+                }
+            };
+            let s2 = match self.paste_command() {
+                Ok(s) => s,
+                Err(_) => {
+                    self.ensure_chat_closed()?;
+                    continue;
+                }
+            };
+            let s3 = match self.send_command() {
+                Ok(s) => s,
+                Err(_) => {
+                    self.ensure_chat_closed()?;
+                    continue;
+                }
+            };
+
+            let total_time = start.elapsed();
+            return Ok(CommandStats {
+                total_time,
+                iterations: [s1.iterations, s2.iterations, s3.iterations],
+            });
+        }
+    }
+
+    fn ensure_chat_closed(&mut self) -> Result<()> {
+        let state = self.detector.detect_chat_state();
+        if !matches!(state, ChatState::Closed) {
+            self.enigo.key(Key::Escape, Click)?;
+            thread::sleep(Timing::key_press_delay());
+        }
+        Ok(())
     }
 
     fn copy_to_clipboard(&mut self, command: &str) -> Result<()> {
@@ -73,45 +103,39 @@ impl CommandExecutor {
     }
 
     fn open_chat(&mut self) -> Result<WaitStats> {
-        let mut total_iterations = 0;
-        loop {
-            self.enigo.key(CHAT_KEY, Click)?;
-            let (state, stats) = self.detector.wait_for_state(ChatState::Open, Timing::state_timeout());
-            total_iterations += stats.iterations;
-            if matches!(state, ChatState::Open) {
-                return Ok(WaitStats { elapsed: stats.elapsed, iterations: total_iterations });
-            }
+        self.enigo.key(CHAT_KEY, Click)?;
+        let (state, stats) = self.detector.wait_for_state(ChatState::Open, Timing::state_timeout());
+        if matches!(state, ChatState::Open) {
+            Ok(stats)
+        } else {
+            Err("Timeout waiting for chat to open".into())
         }
     }
 
     fn paste_command(&mut self) -> Result<WaitStats> {
-        let mut total_iterations = 0;
-        loop {
-            thread::sleep(Timing::key_press_delay());
-            self.enigo.key(Key::Meta, Press)?;
-            thread::sleep(Timing::key_press_delay());
+        thread::sleep(Timing::key_press_delay());
+        self.enigo.key(Key::Meta, Press)?;
+        thread::sleep(Timing::key_press_delay());
 
-            self.enigo.key(PASTE_KEY, Click)?;
-            thread::sleep(Timing::key_press_delay());
-            self.enigo.key(Key::Meta, Release)?;
+        self.enigo.key(PASTE_KEY, Click)?;
+        thread::sleep(Timing::key_press_delay());
+        self.enigo.key(Key::Meta, Release)?;
 
-            let (state, stats) = self.detector.wait_for_state(ChatState::CommandEntered, Timing::state_timeout());
-            total_iterations += stats.iterations;
-            if matches!(state, ChatState::CommandEntered) {
-                return Ok(WaitStats { elapsed: stats.elapsed, iterations: total_iterations });
-            }
+        let (state, stats) = self.detector.wait_for_state(ChatState::CommandEntered, Timing::state_timeout());
+        if matches!(state, ChatState::CommandEntered) {
+            Ok(stats)
+        } else {
+            Err("Timeout waiting for command paste".into())
         }
     }
 
     fn send_command(&mut self) -> Result<WaitStats> {
-        let mut total_iterations = 0;
-        loop {
-            self.enigo.key(Key::Return, Click)?;
-            let (state, stats) = self.detector.wait_for_state(ChatState::Closed, Timing::state_timeout());
-            total_iterations += stats.iterations;
-            if matches!(state, ChatState::Closed) {
-                return Ok(WaitStats { elapsed: stats.elapsed, iterations: total_iterations });
-            }
+        self.enigo.key(Key::Return, Click)?;
+        let (state, stats) = self.detector.wait_for_state(ChatState::Closed, Timing::state_timeout());
+        if matches!(state, ChatState::Closed) {
+            Ok(stats)
+        } else {
+            Err("Timeout waiting for command send".into())
         }
     }
 

@@ -3,9 +3,9 @@
 use std::time::Duration;
 
 // Timing constants (milliseconds)
-pub const KEY_PRESS_DELAY_MS: u64 = 50;
-pub const STATE_TIMEOUT_SECS: u64 = 3;
-pub const POLL_INTERVAL_MS: u64 = 50;
+pub const KEY_PRESS_DELAY_MS: u64 = 40;
+pub const STATE_TIMEOUT_SECS: u64 = 1;
+pub const POLL_INTERVAL_MS: u64 = 40;
 pub const COUNTDOWN_SECONDS: u64 = 3;
 
 // Minecraft limits
