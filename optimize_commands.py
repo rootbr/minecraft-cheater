@@ -86,185 +86,144 @@ def is_attachable_block(block_id: str) -> bool:
     return False
 
 
-def find_vertical_rectangles(grid: dict, processed: set) -> list:
-    """Find vertical rectangles (walls/columns) across Y levels."""
-    # Group by material
-    by_material = defaultdict(list)
-    for (x, y, z), block_id in grid.items():
-        if (x, y, z) not in processed and can_use_fill(block_id):
-            by_material[block_id].append((x, y, z))
+from collections import defaultdict, Counter
 
-    fill_regions = []
-
-    # For each material, find vertical rectangles
-    for block_id, coords in by_material.items():
-        coords_set = set(coords)
-        coords_sorted = sorted(coords_set)
-
-        while coords_sorted:
-            x_start, y_start, z_start = coords_sorted[0]
-
-            if (x_start, y_start, z_start) not in coords_set:
-                coords_sorted.pop(0)
-                continue
-
-            # Try to find vertical column at this XZ position first
-            y_end = y_start
-            while (x_start, y_end + 1, z_start) in coords_set:
-                y_end += 1
-
-            # Now try to extend in X direction (keeping Y range and Z fixed)
-            x_end = x_start
-            can_extend_x = True
-            while can_extend_x:
-                x_next = x_end + 1
-                # Check if entire column exists at x_next
-                for y in range(y_start, y_end + 1):
-                    if (x_next, y, z_start) not in coords_set:
-                        can_extend_x = False
-                        break
-                if can_extend_x:
-                    x_end = x_next
-
-            # Try to extend in Z direction (keeping Y range and X range)
-            z_end = z_start
-            can_extend_z = True
-            while can_extend_z:
-                z_next = z_end + 1
-                # Check if entire XY plane exists at z_next
-                for x in range(x_start, x_end + 1):
-                    for y in range(y_start, y_end + 1):
-                        if (x, y, z_next) not in coords_set:
-                            can_extend_z = False
-                            break
-                    if not can_extend_z:
-                        break
-                if can_extend_z:
-                    z_end = z_next
-
-            # Calculate volume
-            volume = (x_end - x_start + 1) * (y_end - y_start + 1) * (z_end - z_start + 1)
-
-            # Only create fill if it's worthwhile (at least 2 blocks in height or area >= 4)
-            height = y_end - y_start + 1
-            area = (x_end - x_start + 1) * (z_end - z_start + 1)
-
-            if height >= 2 and area >= 2:  # Vertical rectangle with at least 2x2 area
-                fill_regions.append((x_start, y_start, z_start, x_end, y_end, z_end, block_id))
-
-                # Mark as processed
-                for x in range(x_start, x_end + 1):
-                    for y in range(y_start, y_end + 1):
-                        for z in range(z_start, z_end + 1):
-                            coords_set.discard((x, y, z))
-                            processed.add((x, y, z))
+def find_best_cuboid(grid: dict, processed: set, start_p: tuple, block_id: str) -> tuple:
+    """Find a good cuboid starting from a single point by expanding faces greedily."""
+    x1, y1, z1 = start_p
+    x2, y2, z2 = start_p
+    
+    current_matches = 1
+    current_mismatches = 0
+    
+    while True:
+        best_profit = -1
+        best_move = None
+        
+        # Possible moves: (axis, direction, delta)
+        # axis: 0=x, 1=y, 2=z; direction: -1 or 1
+        moves = [
+            (0, -1), (0, 1),
+            (1, -1), (1, 1),
+            (2, -1), (2, 1)
+        ]
+        
+        for axis, direction in moves:
+            # Calculate gain/loss for expanding this face
+            matches = 0
+            mismatches = 0
+            
+            # Boundary of the new face
+            if axis == 0: # X
+                nx = x1 - 1 if direction == -1 else x2 + 1
+                for ny in range(y1, y2 + 1):
+                    for nz in range(z1, z2 + 1):
+                        p = (nx, ny, nz)
+                        if p in processed: pass
+                        elif grid.get(p) == block_id: matches += 1
+                        else: mismatches += 1
+            elif axis == 1: # Y
+                ny = y1 - 1 if direction == -1 else y2 + 1
+                for nx in range(x1, x2 + 1):
+                    for nz in range(z1, z2 + 1):
+                        p = (nx, ny, nz)
+                        if p in processed: pass
+                        elif grid.get(p) == block_id: matches += 1
+                        else: mismatches += 1
+            else: # Z
+                nz = z1 - 1 if direction == -1 else z2 + 1
+                for nx in range(x1, x2 + 1):
+                    for ny in range(y1, y2 + 1):
+                        p = (nx, ny, nz)
+                        if p in processed: pass
+                        elif grid.get(p) == block_id: matches += 1
+                        else: mismatches += 1
+            
+            # Profit of this expansion
+            # We want matches > mismatches. 
+            # If we expand, we add 'mismatches' new commands later.
+            # But we save 'matches' commands now.
+            profit = matches - mismatches
+            if profit > best_profit and matches > 0:
+                best_profit = profit
+                best_move = (axis, direction, matches, mismatches)
+        
+        if best_move and best_profit >= 0:
+            axis, direction, m, mm = best_move
+            if axis == 0:
+                if direction == -1: x1 -= 1
+                else: x2 += 1
+            elif axis == 1:
+                if direction == -1: y1 -= 1
+                else: y2 += 1
             else:
-                # Too small, don't create fill
-                coords_set.discard((x_start, y_start, z_start))
+                if direction == -1: z1 -= 1
+                else: z2 += 1
+            current_matches += m
+            current_mismatches += mm
+        else:
+            break
+            
+    return (x1, y1, z1, x2, y2, z2, current_matches)
 
-            # Rebuild sorted list
-            coords_sorted = sorted(coords_set)
-
-    return fill_regions
-
-
-def find_rectangles_in_layer(layer_blocks: list, y: int, processed_3d: set) -> list:
-    """Find rectangular areas with same material in a single Y layer."""
-    # Group by material
-    by_material = defaultdict(list)
-    for x, z, block_id in layer_blocks:
-        if (x, y, z) not in processed_3d and can_use_fill(block_id):
-            by_material[block_id].append((x, z))
-
-    fill_regions = []
-
-    # For each material, find rectangles
-    for block_id, coords in by_material.items():
-        coords_set = set(coords)
-        coords_sorted = sorted(coords_set)
-
-        while coords_sorted:
-            # Start with first unprocessed coordinate
-            x_start, z_start = coords_sorted[0]
-
-            if (x_start, z_start) not in coords_set:
-                coords_sorted.pop(0)
-                continue
-
-            # Find maximum x extent at this z
-            x_end = x_start
-            while (x_end + 1, z_start) in coords_set:
-                x_end += 1
-
-            # Try to extend in z direction
-            z_end = z_start
-            can_extend = True
-            while can_extend:
-                z_next = z_end + 1
-                # Check if entire row exists at z_next
-                for x in range(x_start, x_end + 1):
-                    if (x, z_next) not in coords_set:
-                        can_extend = False
-                        break
-                if can_extend:
-                    z_end = z_next
-
-            # Found a rectangle
-            area = (x_end - x_start + 1) * (z_end - z_start + 1)
-
-            if area >= 4:  # Only create fill for 2x2 or larger
-                fill_regions.append((x_start, z_start, x_end, z_end, block_id))
-
-                # Mark as processed
-                for x in range(x_start, x_end + 1):
-                    for z in range(z_start, z_end + 1):
-                        coords_set.discard((x, z))
-                        processed_3d.add((x, y, z))
-            else:
-                # Too small, don't create fill
-                coords_set.discard((x_start, z_start))
-
-            # Rebuild sorted list
-            coords_sorted = sorted(coords_set)
-
-    return fill_regions
-
+def find_cuboids_for_material(grid: dict, processed: set, block_id: str) -> list:
+    """Find cuboids for a specific material using greedy expansion."""
+    material_coords = [p for p, b in grid.items() if b == block_id and p not in processed]
+    if not material_coords:
+        return []
+    
+    # Sort to have deterministic behavior
+    material_coords.sort()
+    coords_set = set(material_coords)
+    
+    found_regions = []
+    
+    for p in material_coords:
+        if p in processed:
+            continue
+            
+        x1, y1, z1, x2, y2, z2, matches = find_best_cuboid(grid, processed, p, block_id)
+        
+        # Only use fill if it's profitable (saves at least 1 command)
+        # Cost of fill = 1. Cost of individual setblocks = matches. 
+        # New cost = 1 + (number of mismatches in this box)
+        # But we don't know mismatches directly, let's use matches > 1.
+        if matches >= 2:
+            found_regions.append((x1, y1, z1, x2, y2, z2, block_id))
+            # Mark blocks as processed
+            for x in range(x1, x2 + 1):
+                for y in range(y1, y2 + 1):
+                    for z in range(z1, z2 + 1):
+                        p_in = (x, y, z)
+                        if grid.get(p_in) == block_id:
+                            processed.add(p_in)
+                            
+    return found_regions
 
 def optimize_grid(grid: dict) -> tuple[list, list]:
-    """Optimize grid using 3D cuboid and vertical/horizontal rectangle detection."""
-    processed_3d = set()  # (x, y, z) coordinates already processed
+    """Optimize grid using multi-pass material-frequency-based greedy cuboid detection."""
+    processed = set()
     fill_commands = []
     setblock_commands = []
     attachable_commands = []
 
-    # First pass: Find vertical rectangles/cuboids (walls, columns)
-    print('Finding vertical rectangles...')
-    vertical_rectangles = find_vertical_rectangles(grid, processed_3d)
-    for x1, y1, z1, x2, y2, z2, block_id in vertical_rectangles:
-        fill_commands.append(f'/fill {x1} {y1} {z1} {x2} {y2} {z2} {block_id}')
-    print(f'  Found {len(vertical_rectangles)} vertical regions')
+    # 1. Count material frequency (only for fillable blocks)
+    material_counts = Counter()
+    for p, block_id in grid.items():
+        if can_use_fill(block_id):
+            material_counts[block_id] += 1
+            
+    # 2. Process materials from most frequent to least frequent
+    print(f'Optimizing {len(material_counts)} materials...')
+    for block_id, _ in material_counts.most_common():
+        # Find 3D cuboids (this also covers 2D and 1D if profitable)
+        regions = find_cuboids_for_material(grid, processed, block_id)
+        for r in regions:
+            fill_commands.append(f'/fill {r[0]} {r[1]} {r[2]} {r[3]} {r[4]} {r[5]} {r[6]}')
 
-    # Second pass: Find horizontal rectangles in each Y layer
-    print('Finding horizontal rectangles...')
-    by_y = defaultdict(list)
+    # 3. Generate setblock for remaining unprocessed blocks
     for (x, y, z), block_id in grid.items():
-        by_y[y].append((x, z, block_id))
-
-    horizontal_count = 0
-    for y in sorted(by_y.keys()):
-        layer_blocks = by_y[y]
-        rectangles = find_rectangles_in_layer(layer_blocks, y, processed_3d)
-        horizontal_count += len(rectangles)
-
-        # Generate fill commands for rectangles
-        for x1, z1, x2, z2, block_id in rectangles:
-            fill_commands.append(f'/fill {x1} {y} {z1} {x2} {y} {z2} {block_id}')
-
-    print(f'  Found {horizontal_count} horizontal regions')
-
-    # Third pass: Generate setblock for remaining unprocessed blocks
-    for (x, y, z), block_id in grid.items():
-        if (x, y, z) not in processed_3d:
+        if (x, y, z) not in processed:
             cmd = f'/setblock {x} {y} {z} {block_id}'
             if is_attachable_block(block_id):
                 attachable_commands.append(cmd)
