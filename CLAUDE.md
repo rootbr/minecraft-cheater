@@ -179,6 +179,30 @@ python3 optimize_commands.py input.txt
 python3 optimize_commands.py input.txt output.txt
 ```
 
+### export_pipeline_csv.py
+
+Export full pipeline from GrabCraft to CSV with all transformation stages. Shows original blocks, Bedrock conversion, optimization, and verification.
+
+```bash
+# Export pipeline to CSV
+python3 export_pipeline_csv.py <GRABCRAFT_URL> [output.csv]
+
+# Example
+python3 export_pipeline_csv.py https://www.grabcraft.com/.../house house_pipeline.csv
+```
+
+**CSV Columns:**
+- `x, y, z` - Coordinates (after rotation)
+- `original_material` - GrabCraft block name
+- `bedrock_block` - Bedrock Edition ID with states
+- `optimized_block` - Block after optimization and expansion
+- `match` - ✓ if bedrock and optimized match
+
+**Generated files:**
+- `*_bedrock.txt` - Unoptimized Bedrock commands
+- `*_optimized.txt` - Optimized commands with /fill
+- `*.csv` - Full pipeline data sorted by coordinates
+
 ### Command Optimization
 
 Both scripts optimize commands in priority order:
