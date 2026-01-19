@@ -67,19 +67,28 @@ fn run_from_file(cli: &Cli) -> Result<()> {
 
 fn execute_commands(cli: &Cli, commands: Vec<String>) -> Result<()> {
     let offset = Offset::new(cli.offset_x, cli.offset_y, cli.offset_z);
+
+    let clear_bbox = if cli.skip == 0 {
+        find_bounding_box(&commands)
+    } else {
+        None
+    };
+
     let commands = apply_skip(commands, cli.skip);
     let commands = apply_material_filter(commands, &cli.material);
     if commands.is_empty() {
         return Ok(());
     }
+
     let mut executor = CommandExecutor::new()?;
     executor.show_countdown(COUNTDOWN_SECONDS);
 
     if cli.skip == 0 && cli.material.is_none() {
-        if let Some(b) = find_bounding_box(&commands) {
-            execute_clear(&mut executor, b, offset)?;
+        if let Some(bbox) = clear_bbox {
+            execute_clear(&mut executor, bbox, offset)?;
         }
     }
+
     execute_build_phase(&mut executor, &commands, offset, cli.skip)?;
     Ok(())
 }

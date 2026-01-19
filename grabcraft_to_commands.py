@@ -289,7 +289,6 @@ def main():
 
     print(f'Generated {len(commands)} commands to {output_file}')
     print(f'  /setblock commands: {len(commands)}')
-    print('\nNote: Use mc-commander with --offset-x/y/z to apply coordinate offsets when executing.')
 
 
 if __name__ == '__main__':
