@@ -20,10 +20,10 @@ from typing import Optional
 # Stairs: weirdo_direction mapping (Bedrock's numeric system)
 # JE: facing=north/south/east/west -> BE: weirdo_direction=0-3
 STAIR_DIRECTION = {
-    'south': 0,
-    'north': 1,
-    'west': 2,
-    'east': 3,
+    'south': 2, #https://www.grabcraft.com/minecraft/miniature-house/modern-houses#blueprints
+    'north': 3, #https://www.grabcraft.com/minecraft/miniature-house/modern-houses#blueprints
+    'west': 1,
+    'east': 0,
 }
 
 # Six-way facing (pistons, observers, dispensers, droppers, end rods, shulker boxes)
@@ -48,10 +48,10 @@ HORIZONTAL_FACING = {
 
 # Door direction (doors use 0-3, different from other blocks)
 DOOR_DIRECTION = {
-    'east': 0,
-    'south': 1,
-    'west': 2,
-    'north': 3,
+    'south': 2, #https://www.grabcraft.com/minecraft/miniature-house/modern-houses#blueprints
+    'north': 0, #https://www.grabcraft.com/minecraft/miniature-house/modern-houses#blueprints
+    'west': 3, #https://www.grabcraft.com/minecraft/miniature-house/modern-houses#blueprints
+    'east': 1, #https://www.grabcraft.com/minecraft/miniature-house/modern-houses#blueprints
 }
 
 # Vine direction bits (bitfield: 1=south, 2=west, 4=north, 8=east)

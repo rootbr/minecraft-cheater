@@ -6,7 +6,7 @@ Uses layer-by-layer rectangular area detection.
 
 import re
 import sys
-from collections import defaultdict
+from collections import Counter
 
 
 def parse_command(line: str) -> dict | None:
@@ -86,8 +86,6 @@ def is_attachable_block(block_id: str) -> bool:
     return False
 
 
-from collections import defaultdict, Counter
-
 def find_best_cuboid(grid: dict, processed: set, start_p: tuple, block_id: str) -> tuple:
     """Find a good cuboid starting from a single point by expanding faces greedily."""
     x1, y1, z1 = start_p
@@ -109,40 +107,48 @@ def find_best_cuboid(grid: dict, processed: set, start_p: tuple, block_id: str) 
         ]
         
         for axis, direction in moves:
-            # Calculate gain/loss for expanding this face
             matches = 0
             mismatches = 0
-            
-            # Boundary of the new face
-            if axis == 0: # X
+            has_blocker = False  # Empty space or already-processed position
+
+            if axis == 0:  # X
                 nx = x1 - 1 if direction == -1 else x2 + 1
                 for ny in range(y1, y2 + 1):
                     for nz in range(z1, z2 + 1):
                         p = (nx, ny, nz)
-                        if p in processed: pass
-                        elif grid.get(p) == block_id: matches += 1
-                        else: mismatches += 1
-            elif axis == 1: # Y
+                        if p in processed or p not in grid:
+                            has_blocker = True
+                        elif grid[p] == block_id:
+                            matches += 1
+                        else:
+                            mismatches += 1
+            elif axis == 1:  # Y
                 ny = y1 - 1 if direction == -1 else y2 + 1
                 for nx in range(x1, x2 + 1):
                     for nz in range(z1, z2 + 1):
                         p = (nx, ny, nz)
-                        if p in processed: pass
-                        elif grid.get(p) == block_id: matches += 1
-                        else: mismatches += 1
-            else: # Z
+                        if p in processed or p not in grid:
+                            has_blocker = True
+                        elif grid[p] == block_id:
+                            matches += 1
+                        else:
+                            mismatches += 1
+            else:  # Z
                 nz = z1 - 1 if direction == -1 else z2 + 1
                 for nx in range(x1, x2 + 1):
                     for ny in range(y1, y2 + 1):
                         p = (nx, ny, nz)
-                        if p in processed: pass
-                        elif grid.get(p) == block_id: matches += 1
-                        else: mismatches += 1
-            
-            # Profit of this expansion
-            # We want matches > mismatches. 
-            # If we expand, we add 'mismatches' new commands later.
-            # But we save 'matches' commands now.
+                        if p in processed or p not in grid:
+                            has_blocker = True
+                        elif grid[p] == block_id:
+                            matches += 1
+                        else:
+                            mismatches += 1
+
+            if has_blocker:
+                continue
+
+            # Profit: matches saved minus mismatches that need correction
             profit = matches - mismatches
             if profit > best_profit and matches > 0:
                 best_profit = profit
@@ -172,10 +178,7 @@ def find_cuboids_for_material(grid: dict, processed: set, block_id: str) -> list
     if not material_coords:
         return []
     
-    # Sort to have deterministic behavior
     material_coords.sort()
-    coords_set = set(material_coords)
-    
     found_regions = []
     
     for p in material_coords:
