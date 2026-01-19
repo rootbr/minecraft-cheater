@@ -131,6 +131,8 @@ build_commands.mcfunction    # Command input file (generated or manual)
 
 Converts blueprints from [GrabCraft.com](https://www.grabcraft.com) to Minecraft Bedrock Edition commands with base coordinates (no offset applied).
 
+**✨ Automatic Compass Rotation Detection:** Script automatically detects compass orientation on GrabCraft pages and rotates the entire structure so that North always points UP. This ensures consistent building orientation regardless of how the blueprint was originally oriented on the website.
+
 ```bash
 # Basic usage
 python3 grabcraft_to_commands.py <URL>
@@ -145,6 +147,25 @@ python3 grabcraft_to_commands.py <URL> --save-csv blocks.csv
 **Options:**
 - `-o FILE` - Output file (default: build_commands.txt)
 - `--save-csv [FILE]` - Save blocks to CSV
+
+**Compass Rotation:**
+The script automatically detects the compass orientation from the webpage's HTML and applies rotation to coordinates. Block directions remain unchanged as they are already correct relative to the compass.
+
+- **Coordinates:** X/Z coordinates rotated around structure center
+- **Block Directions:** Preserved as-is (already correct relative to compass)
+
+Supported rotations:
+- **0°** - North UP (standard, no rotation applied)
+- **90°** - North LEFT → coordinates rotated 90° CCW
+- **180°** - North DOWN → coordinates rotated 180°
+- **270°** - North RIGHT → coordinates rotated 90° CW
+
+Example output:
+```
+Compass detected: North is LEFT -> 90° rotation
+Applying 90° rotation to all blocks...
+Rotation applied: 609 blocks
+```
 
 ### optimize_commands.py
 

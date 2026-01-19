@@ -12,7 +12,138 @@ import sys
 from collections import Counter
 from urllib.request import urlopen, Request
 
-from grabcraft_to_bedrock import convert_grabcraft_to_bedrock
+from grabcraft_to_bedrock import convert_grabcraft_to_bedrock, get_converter
+
+# ============================================================================
+# COMPASS ROTATION DETECTION
+# ============================================================================
+
+def detect_compass_rotation_from_html(html: str) -> int:
+    """
+    Detect compass orientation from HTML compass container.
+
+    Returns:
+        0: North points up (standard)
+        90: North points left (rotated 90° CCW)
+        180: North points down
+        270: North points right (rotated 90° CW)
+    """
+    # Find compass container
+    compass_match = re.search(
+        r'<div[^>]*class=["\']compass-container["\'][^>]*>(.*?)</div>',
+        html,
+        re.DOTALL | re.IGNORECASE
+    )
+
+    if not compass_match:
+        print('No compass container found in HTML, assuming standard orientation (0°)')
+        return 0
+
+    compass_html = compass_match.group(1)
+
+    # Find span containing text "N" (North)
+    # ID indicates screen position, text content indicates actual direction
+    north_span_match = re.search(
+        r'<span[^>]*>N</span>',
+        compass_html,
+        re.IGNORECASE
+    )
+
+    if not north_span_match:
+        print('Could not find North (N) in compass, assuming standard orientation (0°)')
+        return 0
+
+    north_span = north_span_match.group(0)
+
+    # Extract the full span with its attributes
+    full_north_span = re.search(
+        r'<span[^>]*id=["\']([^"\']+)["\'][^>]*class=["\']([^"\']*)["\'][^>]*>N</span>',
+        compass_html,
+        re.IGNORECASE
+    )
+
+    if not full_north_span:
+        # Try alternate order (class before id)
+        full_north_span = re.search(
+            r'<span[^>]*class=["\']([^"\']*)["\'][^>]*id=["\']([^"\']+)["\'][^>]*>N</span>',
+            compass_html,
+            re.IGNORECASE
+        )
+        if full_north_span:
+            north_class = full_north_span.group(1)
+            north_id = full_north_span.group(2)
+        else:
+            print('Could not parse North span attributes, assuming standard orientation (0°)')
+            return 0
+    else:
+        north_id = full_north_span.group(1)
+        north_class = full_north_span.group(2)
+
+    # Determine rotation based on North position
+    # Standard: North is in position "north" (top) without pull classes
+    # 90° CCW: North is in position "west" (left) with pull-left
+    # 180°: North is in position "south" (bottom) with pull-right
+    # 270° CW: North is in position "east" (right) with pull-right
+
+    if north_id == 'north':
+        # North is at top position
+        if 'pull-left' in north_class:
+            # North at top but pulled left -> unusual, treat as standard
+            rotation = 0
+            print('Compass detected: North is UP (standard) -> 0° rotation')
+        elif 'pull-right' in north_class:
+            rotation = 0
+            print('Compass detected: North is UP (standard) -> 0° rotation')
+        else:
+            rotation = 0
+            print('Compass detected: North is UP (standard) -> 0° rotation')
+    elif north_id == 'west':
+        # North is at left position -> 90° CCW rotation
+        rotation = 90
+        print('Compass detected: North is LEFT -> 90° rotation')
+    elif north_id == 'east':
+        # North is at right position -> 90° CW rotation (270°)
+        rotation = 270
+        print('Compass detected: North is RIGHT -> 270° rotation')
+    elif north_id == 'south':
+        # North is at bottom position -> 180° rotation
+        rotation = 180
+        print('Compass detected: North is DOWN -> 180° rotation')
+    else:
+        rotation = 0
+        print(f'Unknown North position ({north_id}), assuming standard orientation (0°)')
+
+    return rotation
+
+
+def rotate_coordinates(x: int, z: int, rotation: int, width: int, depth: int) -> tuple[int, int]:
+    """
+    Rotate grid coordinates around center.
+
+    Args:
+        x, z: Original coordinates
+        rotation: Rotation in degrees (0, 90, 180, 270)
+        width, depth: Grid dimensions for calculating rotation center
+
+    Returns:
+        (new_x, new_z): Rotated coordinates
+    """
+    if rotation == 0:
+        return x, z
+    elif rotation == 90:
+        # 90° CW: (x, z) -> (depth - z - 1, x)
+        return depth - z - 1, x
+    elif rotation == 180:
+        # 180°: (x, z) -> (width - x - 1, depth - z - 1)
+        return width - x - 1, depth - z - 1
+    elif rotation == 270:
+        # 90° CCW: (x, z) -> (z, width - x - 1)
+        return z, width - x - 1
+    else:
+        return x, z
+
+
+
 
 # ============================================================================
 # WEB SCRAPING FUNCTIONS
@@ -153,6 +284,36 @@ def extract_blocks_from_web(page_url: str) -> list[dict]:
     blocks = list(blocks_dict.values())
     blocks.sort(key=lambda b: (b['layer'], b['z'], b['x']))
     print(f'Extracted {len(blocks)} blocks (duplicates merged)')
+
+    # Detect compass rotation from HTML
+    rotation = detect_compass_rotation_from_html(html)
+
+    if rotation != 0:
+        print(f'Applying {rotation}° rotation to all blocks...')
+
+        # Calculate grid dimensions (before rotation)
+        max_x = max(b['x'] for b in blocks)
+        max_z = max(b['z'] for b in blocks)
+        width = max_x + 1
+        depth = max_z + 1
+
+        # Apply rotation to all blocks
+        rotated_blocks = []
+        for b in blocks:
+            # Rotate coordinates only - block directions are already correct relative to compass
+            new_x, new_z = rotate_coordinates(b['x'], b['z'], rotation, width, depth)
+
+            rotated_blocks.append({
+                'layer': b['layer'],
+                'x': new_x,
+                'z': new_z,
+                'y': b['y'],
+                'material': b['material']
+            })
+
+        blocks = rotated_blocks
+        blocks.sort(key=lambda b: (b['layer'], b['z'], b['x']))
+        print(f'Rotation applied: {len(blocks)} blocks')
 
     return blocks
 
