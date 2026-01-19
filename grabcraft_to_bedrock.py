@@ -1047,7 +1047,12 @@ class GrabCraftToBedrockConverter:
         r'^Flower\s*\(([^,]+)(?:,\s*(Upper|Lower))?\)$',
         re.IGNORECASE
     )
-    
+
+    SIGN_PATTERN = re.compile(
+        r'^(?:(.+?)\s+)?(?:Wall[- ]?(?:mounted|Mounted)?\s*)?Sign(?:\s+Block)?\s*[,\s]*(?:\(([^)]*)\)|(.+))?$',
+        re.IGNORECASE
+    )
+
     # Colored block patterns
     COLORED_WOOL_PATTERN = re.compile(
         r'^(.+?)\s+Wool$',
@@ -1179,6 +1184,7 @@ class GrabCraftToBedrockConverter:
             self._convert_redstone_wire,
             self._convert_water,
             self._convert_flower,
+            self._convert_sign,
             self._convert_colored_wool,
             self._convert_colored_terracotta,
             self._convert_colored_concrete,
@@ -1847,7 +1853,98 @@ class GrabCraftToBedrockConverter:
                 'upper_block_bit': is_upper,
             }
         )
-    
+
+    def _convert_sign(self, name: str) -> Optional[BedrockBlock]:
+        """Convert sign blocks (wall signs and standing signs)."""
+        match = self.SIGN_PATTERN.match(name)
+        if not match:
+            return None
+
+        material = (match.group(1) or '').lower().strip()
+        direction_in_parens = (match.group(2) or '').lower().strip()
+        direction_after = (match.group(3) or '').lower().strip()
+
+        # Combine direction from both possible locations
+        direction_str = direction_in_parens or direction_after
+
+        # Check if it's a wall sign
+        is_wall = 'wall' in name.lower()
+
+        # Determine sign material (oak is default)
+        wood_types = ['oak', 'spruce', 'birch', 'jungle', 'acacia',
+                      'dark oak', 'mangrove', 'cherry', 'bamboo',
+                      'crimson', 'warped']
+
+        sign_material = 'oak'  # Default
+        for wood in wood_types:
+            if wood in material:
+                sign_material = wood.replace(' ', '_')
+                break
+
+        if is_wall:
+            # Wall signs use facing_direction
+            facing = 2  # Default north
+
+            # Parse direction
+            if 'west' in direction_str and 'north' in direction_str:
+                facing = 4  # West
+            elif 'east' in direction_str and 'north' in direction_str:
+                facing = 5  # East
+            elif 'west' in direction_str and 'south' in direction_str:
+                facing = 4  # West
+            elif 'east' in direction_str and 'south' in direction_str:
+                facing = 5  # East
+            elif 'west' in direction_str:
+                facing = 4
+            elif 'east' in direction_str:
+                facing = 5
+            elif 'north' in direction_str:
+                facing = 2
+            elif 'south' in direction_str:
+                facing = 3
+
+            return BedrockBlock(
+                block_id='minecraft:wall_sign',
+                states={
+                    'facing_direction': facing,
+                }
+            )
+        else:
+            # Standing signs use ground_sign_direction (0-15 for rotation)
+            rotation = 0  # Default
+
+            # Parse rotation from direction
+            direction_to_rotation = {
+                'south': 0,
+                'south-southwest': 1,
+                'southwest': 2,
+                'west-southwest': 3,
+                'west': 4,
+                'west-northwest': 5,
+                'northwest': 6,
+                'north-northwest': 7,
+                'north': 8,
+                'north-northeast': 9,
+                'northeast': 10,
+                'east-northeast': 11,
+                'east': 12,
+                'east-southeast': 13,
+                'southeast': 14,
+                'south-southeast': 15,
+            }
+
+            for dir_name, rot_value in direction_to_rotation.items():
+                if dir_name in direction_str:
+                    rotation = rot_value
+                    break
+
+            return BedrockBlock(
+                block_id=f'minecraft:{sign_material}_standing_sign',
+                states={
+                    'ground_sign_direction': rotation,
+                }
+            )
+
     def _convert_colored_wool(self, name: str) -> Optional[BedrockBlock]:
         """Convert colored wool blocks."""
         match = self.COLORED_WOOL_PATTERN.match(name)
