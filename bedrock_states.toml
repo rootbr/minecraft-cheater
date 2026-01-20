@@ -1,0 +1,837 @@
+# Bedrock Block State Constants and Mappings
+# Direction mappings and block name conversions for GrabCraft to Bedrock Edition
+
+# =============================================================================
+# DIRECTION MAPPINGS
+# =============================================================================
+
+[stair_direction]
+south = 2
+north = 3
+west = 1
+east = 0
+
+[sixway_facing]
+down = 0
+up = 1
+north = 2
+south = 3
+west = 4
+east = 5
+
+[horizontal_facing]
+north = 2
+south = 3
+west = 4
+east = 5
+
+[door_direction]
+south = 2
+north = 0
+west = 3
+east = 1
+
+[vine_bits]
+south = 1
+west = 2
+north = 4
+east = 8
+
+[torch_facing]
+up = "top"
+north = "north"
+south = "south"
+east = "east"
+west = "west"
+
+[pillar_axis]
+y = "y"
+x = "x"
+z = "z"
+"north/south" = "z"
+"east/west" = "x"
+"up/down" = "y"
+
+[button_facing]
+down = 0
+up = 1
+north = 2
+south = 3
+west = 4
+east = 5
+
+# =============================================================================
+# COLORS
+# =============================================================================
+
+[colors]
+list = [
+    "white", "orange", "magenta", "light_blue", "yellow", "lime", "pink",
+    "gray", "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black"
+]
+
+[grabcraft_color_map]
+"light blue" = "light_blue"
+"light gray" = "light_gray"
+lightblue = "light_blue"
+lightgray = "light_gray"
+silver = "light_gray"
+
+# =============================================================================
+# JAVA EDITION TO BEDROCK EDITION NAME MAPPINGS
+# =============================================================================
+
+[je_to_be_names]
+lily_pad = "waterlily"
+lilac = "lilac"
+cobweb = "web"
+sugar_cane = "reeds"
+snow_layer = "snow_layer"
+bricks = "brick_block"
+terracotta = "hardened_clay"
+chiseled_stone_bricks = "chiseled_stone_bricks"
+powered_rail = "golden_rail"
+redstone_lamp = "redstone_lamp"
+lit_redstone_lamp = "lit_redstone_lamp"
+note_block = "noteblock"
+wheat_seeds = "wheat_seeds"
+beetroots = "beetroot"
+cave_vines_plant = "cave_vines_body_with_berries"
+small_dripleaf = "small_dripleaf_block"
+chipped_anvil = "anvil"
+damaged_anvil = "anvil"
+
+# =============================================================================
+# GRABCRAFT TO BEDROCK BLOCK MAPPINGS
+# =============================================================================
+
+[grabcraft_to_be]
+# Stained Clay -> Terracotta
+"white stained clay" = "white_terracotta"
+"orange stained clay" = "orange_terracotta"
+"magenta stained clay" = "magenta_terracotta"
+"light blue stained clay" = "light_blue_terracotta"
+"yellow stained clay" = "yellow_terracotta"
+"lime stained clay" = "lime_terracotta"
+"pink stained clay" = "pink_terracotta"
+"gray stained clay" = "gray_terracotta"
+"light gray stained clay" = "light_gray_terracotta"
+"cyan stained clay" = "cyan_terracotta"
+"purple stained clay" = "purple_terracotta"
+"blue stained clay" = "blue_terracotta"
+"brown stained clay" = "brown_terracotta"
+"green stained clay" = "green_terracotta"
+"red stained clay" = "red_terracotta"
+"black stained clay" = "black_terracotta"
+
+# Wood Planks
+"oak wood plank" = "oak_planks"
+"spruce wood plank" = "spruce_planks"
+"birch wood plank" = "birch_planks"
+"jungle wood plank" = "jungle_planks"
+"acacia wood plank" = "acacia_planks"
+"dark oak wood plank" = "dark_oak_planks"
+"mangrove wood plank" = "mangrove_planks"
+"cherry wood plank" = "cherry_planks"
+"bamboo wood plank" = "bamboo_planks"
+"crimson wood plank" = "crimson_planks"
+"warped wood plank" = "warped_planks"
+
+# Logs
+"oak wood" = "oak_log"
+"spruce wood" = "spruce_log"
+"birch wood" = "birch_log"
+"jungle wood" = "jungle_log"
+"acacia wood" = "acacia_log"
+"dark oak wood" = "dark_oak_log"
+"mangrove wood" = "mangrove_log"
+"cherry wood" = "cherry_log"
+"crimson stem" = "crimson_stem"
+"warped stem" = "warped_stem"
+
+# Stripped variants
+"stripped oak wood" = "stripped_oak_log"
+"stripped spruce wood" = "stripped_spruce_log"
+"stripped birch wood" = "stripped_birch_log"
+"stripped jungle wood" = "stripped_jungle_log"
+"stripped acacia wood" = "stripped_acacia_log"
+"stripped dark oak wood" = "stripped_dark_oak_log"
+
+# Basic blocks
+"stone bricks" = "stone_bricks"
+"mossy stone bricks" = "mossy_stone_bricks"
+"cracked stone bricks" = "cracked_stone_bricks"
+"chiseled stone bricks" = "chiseled_stone_bricks"
+"mossy cobblestone" = "mossy_cobblestone"
+cobblestone = "cobblestone"
+stone = "stone"
+"smooth stone" = "smooth_stone"
+grass = "grass_block"
+"grass block" = "grass_block"
+dirt = "dirt"
+"coarse dirt" = "coarse_dirt"
+"rooted dirt" = "dirt_with_roots"
+farmland = "farmland"
+gravel = "gravel"
+sand = "sand"
+"red sand" = "red_sand"
+clay = "clay"
+bedrock = "bedrock"
+obsidian = "obsidian"
+"crying obsidian" = "crying_obsidian"
+
+# Sandstone
+sandstone = "sandstone"
+"chiseled sandstone" = "sandstone"
+"cut sandstone" = "sandstone"
+"smooth sandstone" = "smooth_sandstone"
+"red sandstone" = "red_sandstone"
+"chiseled red sandstone" = "red_sandstone"
+"cut red sandstone" = "red_sandstone"
+"smooth red sandstone" = "smooth_red_sandstone"
+
+# Nether blocks
+netherrack = "netherrack"
+"nether bricks" = "nether_brick"
+"red nether bricks" = "red_nether_brick"
+"nether wart block" = "nether_wart_block"
+"warped wart block" = "warped_wart_block"
+"soul sand" = "soul_sand"
+"soul soil" = "soul_soil"
+basalt = "basalt"
+"polished basalt" = "polished_basalt"
+"smooth basalt" = "smooth_basalt"
+blackstone = "blackstone"
+"polished blackstone" = "polished_blackstone"
+"polished blackstone bricks" = "polished_blackstone_bricks"
+"cracked polished blackstone bricks" = "cracked_polished_blackstone_bricks"
+"chiseled polished blackstone" = "chiseled_polished_blackstone"
+"gilded blackstone" = "gilded_blackstone"
+glowstone = "glowstone"
+shroomlight = "shroomlight"
+"magma block" = "magma"
+"ancient debris" = "ancient_debris"
+
+# End blocks
+"end stone" = "end_stone"
+"end stone bricks" = "end_bricks"
+"purpur block" = "purpur_block"
+"purpur pillar" = "purpur_pillar"
+
+# Prismarine
+prismarine = "prismarine"
+"prismarine bricks" = "prismarine"
+"dark prismarine" = "prismarine"
+"sea lantern" = "sea_lantern"
+
+# Quartz
+"quartz block" = "quartz_block"
+"chiseled quartz block" = "quartz_block"
+"quartz pillar" = "quartz_block"
+"smooth quartz" = "smooth_quartz"
+"quartz bricks" = "quartz_bricks"
+
+# Deepslate
+deepslate = "deepslate"
+"cobbled deepslate" = "cobbled_deepslate"
+"polished deepslate" = "polished_deepslate"
+"deepslate bricks" = "deepslate_bricks"
+"cracked deepslate bricks" = "cracked_deepslate_bricks"
+"deepslate tiles" = "deepslate_tiles"
+"cracked deepslate tiles" = "cracked_deepslate_tiles"
+"chiseled deepslate" = "chiseled_deepslate"
+"reinforced deepslate" = "reinforced_deepslate"
+
+# Copper
+"copper block" = "copper_block"
+"cut copper" = "cut_copper"
+"exposed copper" = "exposed_copper"
+"weathered copper" = "weathered_copper"
+"oxidized copper" = "oxidized_copper"
+
+# Tuff
+tuff = "tuff"
+"polished tuff" = "polished_tuff"
+"tuff bricks" = "tuff_bricks"
+"chiseled tuff" = "chiseled_tuff"
+"chiseled tuff bricks" = "chiseled_tuff_bricks"
+
+# Dripstone & Amethyst
+"dripstone block" = "dripstone_block"
+"pointed dripstone" = "pointed_dripstone"
+"amethyst block" = "amethyst_block"
+"budding amethyst" = "budding_amethyst"
+"small amethyst bud" = "small_amethyst_bud"
+"medium amethyst bud" = "medium_amethyst_bud"
+"large amethyst bud" = "large_amethyst_bud"
+"amethyst cluster" = "amethyst_cluster"
+
+# Sculk
+sculk = "sculk"
+"sculk vein" = "sculk_vein"
+"sculk catalyst" = "sculk_catalyst"
+"sculk shrieker" = "sculk_shrieker"
+"sculk sensor" = "sculk_sensor"
+"calibrated sculk sensor" = "calibrated_sculk_sensor"
+
+# Moss & Cave vegetation
+"moss block" = "moss_block"
+"moss carpet" = "moss_carpet"
+azalea = "azalea"
+"flowering azalea" = "flowering_azalea"
+"azalea leaves" = "azalea_leaves"
+"flowering azalea leaves" = "azalea_leaves_flowered"
+"glow lichen" = "glow_lichen"
+"big dripleaf" = "big_dripleaf"
+"small dripleaf" = "small_dripleaf_block"
+"spore blossom" = "spore_blossom"
+"hanging roots" = "hanging_roots"
+"cave vines" = "cave_vines"
+
+# Mud & Mangrove
+mud = "mud"
+"packed mud" = "packed_mud"
+"mud bricks" = "mud_bricks"
+"muddy mangrove roots" = "muddy_mangrove_roots"
+"mangrove roots" = "mangrove_roots"
+
+# Glass
+glass = "glass"
+"glass pane" = "glass_pane"
+"tinted glass" = "tinted_glass"
+
+# Metals & Ores
+"iron block" = "iron_block"
+"gold block" = "gold_block"
+"diamond block" = "diamond_block"
+"emerald block" = "emerald_block"
+"lapis lazuli block" = "lapis_block"
+"redstone block" = "redstone_block"
+"coal block" = "coal_block"
+"netherite block" = "netherite_block"
+"raw iron block" = "raw_iron_block"
+"raw gold block" = "raw_gold_block"
+"raw copper block" = "raw_copper_block"
+
+# Utility blocks
+"crafting table" = "crafting_table"
+furnace = "furnace"
+"blast furnace" = "blast_furnace"
+smoker = "smoker"
+"brewing stand" = "brewing_stand"
+"enchanting table" = "enchanting_table"
+anvil = "anvil"
+grindstone = "grindstone"
+stonecutter = "stonecutter_block"
+"cartography table" = "cartography_table"
+"fletching table" = "fletching_table"
+"smithing table" = "smithing_table"
+loom = "loom"
+barrel = "barrel"
+composter = "composter"
+lectern = "lectern"
+cauldron = "cauldron"
+bell = "bell"
+beacon = "beacon"
+conduit = "conduit"
+lodestone = "lodestone"
+"respawn anchor" = "respawn_anchor"
+
+# Storage
+chest = "chest"
+"trapped chest" = "trapped_chest"
+"ender chest" = "ender_chest"
+bookshelf = "bookshelf"
+"chiseled bookshelf" = "chiseled_bookshelf"
+jukebox = "jukebox"
+
+# Lighting
+torch = "torch"
+"wall torch" = "torch"
+"soul torch" = "soul_torch"
+lantern = "lantern"
+"soul lantern" = "soul_lantern"
+campfire = "campfire"
+"soul campfire" = "soul_campfire"
+"redstone lamp" = "redstone_lamp"
+"sea pickle" = "sea_pickle"
+"end rod" = "end_rod"
+
+# Redstone
+"redstone wire" = "redstone_wire"
+"redstone torch" = "redstone_torch"
+"redstone repeater" = "repeater"
+"redstone comparator" = "comparator"
+lever = "lever"
+"tripwire hook" = "tripwire_hook"
+tripwire = "tripwire"
+"daylight detector" = "daylight_detector"
+target = "target"
+"lightning rod" = "lightning_rod"
+
+# Pistons & Observers
+piston = "piston"
+"sticky piston" = "sticky_piston"
+"piston head" = "piston_arm_collision"
+"moving piston" = "moving_block"
+observer = "observer"
+dispenser = "dispenser"
+dropper = "dropper"
+hopper = "hopper"
+
+# Rails
+rail = "rail"
+"powered rail" = "golden_rail"
+"detector rail" = "detector_rail"
+"activator rail" = "activator_rail"
+
+# TNT & Fire
+tnt = "tnt"
+fire = "fire"
+"soul fire" = "soul_fire"
+
+# Plants & Flowers
+"lily pad" = "waterlily"
+dandelion = "dandelion"
+poppy = "poppy"
+"blue orchid" = "blue_orchid"
+allium = "allium"
+"azure bluet" = "azure_bluet"
+"red tulip" = "red_tulip"
+"orange tulip" = "orange_tulip"
+"white tulip" = "white_tulip"
+"pink tulip" = "pink_tulip"
+"oxeye daisy" = "oxeye_daisy"
+cornflower = "cornflower"
+"lily of the valley" = "lily_of_the_valley"
+"wither rose" = "wither_rose"
+torchflower = "torchflower"
+"pink petals" = "pink_petals"
+sunflower = "sunflower"
+lilac = "lilac"
+"rose bush" = "rose_bush"
+peony = "peony"
+"pitcher plant" = "pitcher_plant"
+"tall grass" = "tall_grass"
+"large fern" = "large_fern"
+fern = "fern"
+"dead bush" = "deadbush"
+
+# Crops
+wheat = "wheat"
+carrots = "carrots"
+potatoes = "potatoes"
+beetroots = "beetroot"
+melon = "melon_block"
+pumpkin = "pumpkin"
+"carved pumpkin" = "carved_pumpkin"
+"jack o'lantern" = "lit_pumpkin"
+
+# Vines & Climbing
+vine = "vine"
+vines = "vine"
+"weeping vines" = "weeping_vines"
+"twisting vines" = "twisting_vines"
+
+# Leaves
+"oak leaves" = "oak_leaves"
+"spruce leaves" = "spruce_leaves"
+"birch leaves" = "birch_leaves"
+"jungle leaves" = "jungle_leaves"
+"acacia leaves" = "acacia_leaves"
+"dark oak leaves" = "dark_oak_leaves"
+"mangrove leaves" = "mangrove_leaves"
+"cherry leaves" = "cherry_leaves"
+
+# Saplings
+"oak sapling" = "oak_sapling"
+"spruce sapling" = "spruce_sapling"
+"birch sapling" = "birch_sapling"
+"jungle sapling" = "jungle_sapling"
+"acacia sapling" = "acacia_sapling"
+"dark oak sapling" = "dark_oak_sapling"
+"mangrove propagule" = "mangrove_propagule"
+"cherry sapling" = "cherry_sapling"
+
+# Mushrooms
+"red mushroom" = "red_mushroom"
+"brown mushroom" = "brown_mushroom"
+"red mushroom block" = "red_mushroom_block"
+"brown mushroom block" = "brown_mushroom_block"
+"mushroom stem" = "mushroom_stem"
+
+# Ice & Snow
+ice = "ice"
+"packed ice" = "packed_ice"
+"blue ice" = "blue_ice"
+snow = "snow_layer"
+"snow block" = "snow"
+"powder snow" = "powder_snow"
+
+# Coral
+"tube coral block" = "tube_coral_block"
+"brain coral block" = "brain_coral_block"
+"bubble coral block" = "bubble_coral_block"
+"fire coral block" = "fire_coral_block"
+"horn coral block" = "horn_coral_block"
+"dead tube coral block" = "dead_tube_coral_block"
+"dead brain coral block" = "dead_brain_coral_block"
+"dead bubble coral block" = "dead_bubble_coral_block"
+"dead fire coral block" = "dead_fire_coral_block"
+"dead horn coral block" = "dead_horn_coral_block"
+
+# Sponge
+sponge = "sponge"
+"wet sponge" = "sponge"
+
+# Misc
+cobweb = "web"
+"slime block" = "slime"
+"honey block" = "honey_block"
+"honeycomb block" = "honeycomb_block"
+"hay bale" = "hay_block"
+"bone block" = "bone_block"
+"dried kelp block" = "dried_kelp_block"
+"bamboo block" = "bamboo_block"
+"stripped bamboo block" = "stripped_bamboo_block"
+
+# Fences
+"oak fence" = "oak_fence"
+"spruce fence" = "spruce_fence"
+"birch fence" = "birch_fence"
+"jungle fence" = "jungle_fence"
+"acacia fence" = "acacia_fence"
+"dark oak fence" = "dark_oak_fence"
+"mangrove fence" = "mangrove_fence"
+"cherry fence" = "cherry_fence"
+"bamboo fence" = "bamboo_fence"
+"crimson fence" = "crimson_fence"
+"warped fence" = "warped_fence"
+"nether brick fence" = "nether_brick_fence"
+
+# Fence Gates
+"oak fence gate" = "fence_gate"
+"spruce fence gate" = "spruce_fence_gate"
+"birch fence gate" = "birch_fence_gate"
+"jungle fence gate" = "jungle_fence_gate"
+"acacia fence gate" = "acacia_fence_gate"
+"dark oak fence gate" = "dark_oak_fence_gate"
+"mangrove fence gate" = "mangrove_fence_gate"
+"cherry fence gate" = "cherry_fence_gate"
+"bamboo fence gate" = "bamboo_fence_gate"
+"crimson fence gate" = "crimson_fence_gate"
+"warped fence gate" = "warped_fence_gate"
+
+# Iron Bars
+"iron bars" = "iron_bars"
+
+# Beds, Banners, Carpets (base)
+bed = "bed"
+banner = "banner"
+carpet = "carpet"
+
+# Water & Lava
+water = "water"
+"still water" = "water"
+"flowing water" = "flowing_water"
+lava = "lava"
+"still lava" = "lava"
+"flowing lava" = "flowing_lava"
+
+# Air
+air = "air"
+
+# =============================================================================
+# STAIR MATERIAL MAPPINGS
+# =============================================================================
+
+[stair_materials]
+# Wood
+"oak wood" = "oak_stairs"
+oak = "oak_stairs"
+"spruce wood" = "spruce_stairs"
+spruce = "spruce_stairs"
+"birch wood" = "birch_stairs"
+birch = "birch_stairs"
+"jungle wood" = "jungle_stairs"
+jungle = "jungle_stairs"
+"acacia wood" = "acacia_stairs"
+acacia = "acacia_stairs"
+"dark oak wood" = "dark_oak_stairs"
+"dark oak" = "dark_oak_stairs"
+"mangrove wood" = "mangrove_stairs"
+mangrove = "mangrove_stairs"
+"cherry wood" = "cherry_stairs"
+cherry = "cherry_stairs"
+"bamboo wood" = "bamboo_stairs"
+bamboo = "bamboo_stairs"
+"bamboo mosaic" = "bamboo_mosaic_stairs"
+crimson = "crimson_stairs"
+warped = "warped_stairs"
+
+# Stone
+cobblestone = "stone_stairs"
+stone = "normal_stone_stairs"
+"stone brick" = "stone_brick_stairs"
+"mossy cobblestone" = "mossy_cobblestone_stairs"
+"mossy stone brick" = "mossy_stone_brick_stairs"
+granite = "granite_stairs"
+"polished granite" = "polished_granite_stairs"
+diorite = "diorite_stairs"
+"polished diorite" = "polished_diorite_stairs"
+andesite = "andesite_stairs"
+"polished andesite" = "polished_andesite_stairs"
+"smooth stone" = "smooth_stone_stairs"
+
+# Brick
+brick = "brick_stairs"
+"nether brick" = "nether_brick_stairs"
+"red nether brick" = "red_nether_brick_stairs"
+
+# Sandstone
+sandstone = "sandstone_stairs"
+"smooth sandstone" = "smooth_sandstone_stairs"
+"red sandstone" = "red_sandstone_stairs"
+"smooth red sandstone" = "smooth_red_sandstone_stairs"
+
+# Quartz
+quartz = "quartz_stairs"
+"smooth quartz" = "smooth_quartz_stairs"
+
+# Prismarine
+prismarine = "prismarine_stairs"
+"prismarine brick" = "prismarine_bricks_stairs"
+"dark prismarine" = "dark_prismarine_stairs"
+
+# End & Purpur
+"end stone brick" = "end_brick_stairs"
+purpur = "purpur_stairs"
+
+# Blackstone
+blackstone = "blackstone_stairs"
+"polished blackstone" = "polished_blackstone_stairs"
+"polished blackstone brick" = "polished_blackstone_brick_stairs"
+
+# Deepslate
+"cobbled deepslate" = "cobbled_deepslate_stairs"
+"polished deepslate" = "polished_deepslate_stairs"
+"deepslate brick" = "deepslate_brick_stairs"
+"deepslate tile" = "deepslate_tile_stairs"
+
+# Copper
+"cut copper" = "cut_copper_stairs"
+"exposed cut copper" = "exposed_cut_copper_stairs"
+"weathered cut copper" = "weathered_cut_copper_stairs"
+"oxidized cut copper" = "oxidized_cut_copper_stairs"
+"waxed cut copper" = "waxed_cut_copper_stairs"
+"waxed exposed cut copper" = "waxed_exposed_cut_copper_stairs"
+"waxed weathered cut copper" = "waxed_weathered_cut_copper_stairs"
+"waxed oxidized cut copper" = "waxed_oxidized_cut_copper_stairs"
+
+# Mud & Tuff
+"mud brick" = "mud_brick_stairs"
+tuff = "tuff_stairs"
+"polished tuff" = "polished_tuff_stairs"
+"tuff brick" = "tuff_brick_stairs"
+
+# =============================================================================
+# SLAB MATERIAL MAPPINGS
+# =============================================================================
+
+[slab_materials]
+# Wood
+oak = "oak_slab"
+"oak wood" = "oak_slab"
+wooden = "oak_slab"
+spruce = "spruce_slab"
+"spruce wood" = "spruce_slab"
+birch = "birch_slab"
+"birch wood" = "birch_slab"
+jungle = "jungle_slab"
+"jungle wood" = "jungle_slab"
+acacia = "acacia_slab"
+"acacia wood" = "acacia_slab"
+"dark oak" = "dark_oak_slab"
+"dark oak wood" = "dark_oak_slab"
+mangrove = "mangrove_slab"
+cherry = "cherry_slab"
+bamboo = "bamboo_slab"
+"bamboo mosaic" = "bamboo_mosaic_slab"
+crimson = "crimson_slab"
+warped = "warped_slab"
+
+# Stone
+stone = "stone_slab"
+"smooth stone" = "smooth_stone_slab"
+cobblestone = "cobblestone_slab"
+"mossy cobblestone" = "mossy_cobblestone_slab"
+"stone brick" = "stone_brick_slab"
+"mossy stone brick" = "mossy_stone_brick_slab"
+granite = "granite_slab"
+"polished granite" = "polished_granite_slab"
+diorite = "diorite_slab"
+"polished diorite" = "polished_diorite_slab"
+andesite = "andesite_slab"
+"polished andesite" = "polished_andesite_slab"
+
+# Brick
+brick = "brick_slab"
+"nether brick" = "nether_brick_slab"
+"red nether brick" = "red_nether_brick_slab"
+
+# Sandstone
+sandstone = "sandstone_slab"
+"cut sandstone" = "cut_sandstone_slab"
+"smooth sandstone" = "smooth_sandstone_slab"
+"red sandstone" = "red_sandstone_slab"
+"cut red sandstone" = "cut_red_sandstone_slab"
+"smooth red sandstone" = "smooth_red_sandstone_slab"
+
+# Quartz
+quartz = "quartz_slab"
+"smooth quartz" = "smooth_quartz_slab"
+
+# Prismarine
+prismarine = "prismarine_slab"
+"prismarine brick" = "prismarine_brick_slab"
+"dark prismarine" = "dark_prismarine_slab"
+
+# End & Purpur
+"end stone brick" = "end_stone_brick_slab"
+purpur = "purpur_slab"
+
+# Blackstone
+blackstone = "blackstone_slab"
+"polished blackstone" = "polished_blackstone_slab"
+"polished blackstone brick" = "polished_blackstone_brick_slab"
+
+# Deepslate
+"cobbled deepslate" = "cobbled_deepslate_slab"
+"polished deepslate" = "polished_deepslate_slab"
+"deepslate brick" = "deepslate_brick_slab"
+"deepslate tile" = "deepslate_tile_slab"
+
+# Copper
+"cut copper" = "cut_copper_slab"
+"exposed cut copper" = "exposed_cut_copper_slab"
+"weathered cut copper" = "weathered_cut_copper_slab"
+"oxidized cut copper" = "oxidized_cut_copper_slab"
+"waxed cut copper" = "waxed_cut_copper_slab"
+"waxed exposed cut copper" = "waxed_exposed_cut_copper_slab"
+"waxed weathered cut copper" = "waxed_weathered_cut_copper_slab"
+"waxed oxidized cut copper" = "waxed_oxidized_cut_copper_slab"
+
+# Mud & Tuff
+"mud brick" = "mud_brick_slab"
+tuff = "tuff_slab"
+"polished tuff" = "polished_tuff_slab"
+"tuff brick" = "tuff_brick_slab"
+
+# =============================================================================
+# DOUBLE SLAB TO BLOCK MAPPINGS
+# =============================================================================
+
+[double_slab_to_block]
+stone = "smooth_stone"
+"smooth stone" = "smooth_stone"
+cobblestone = "cobblestone"
+"stone brick" = "stone_bricks"
+oak = "oak_planks"
+wooden = "oak_planks"
+spruce = "spruce_planks"
+birch = "birch_planks"
+jungle = "jungle_planks"
+acacia = "acacia_planks"
+"dark oak" = "dark_oak_planks"
+brick = "brick_block"
+"nether brick" = "nether_brick"
+sandstone = "sandstone"
+quartz = "quartz_block"
+
+# =============================================================================
+# DOOR MATERIAL MAPPINGS
+# =============================================================================
+
+[door_materials]
+oak = "wooden_door"
+"oak wood" = "wooden_door"
+wooden = "wooden_door"
+spruce = "spruce_door"
+"spruce wood" = "spruce_door"
+birch = "birch_door"
+"birch wood" = "birch_door"
+jungle = "jungle_door"
+"jungle wood" = "jungle_door"
+acacia = "acacia_door"
+"acacia wood" = "acacia_door"
+"dark oak" = "dark_oak_door"
+"dark oak wood" = "dark_oak_door"
+mangrove = "mangrove_door"
+cherry = "cherry_door"
+bamboo = "bamboo_door"
+crimson = "crimson_door"
+warped = "warped_door"
+iron = "iron_door"
+copper = "copper_door"
+"exposed copper" = "exposed_copper_door"
+"weathered copper" = "weathered_copper_door"
+"oxidized copper" = "oxidized_copper_door"
+"waxed copper" = "waxed_copper_door"
+"waxed exposed copper" = "waxed_exposed_copper_door"
+"waxed weathered copper" = "waxed_weathered_copper_door"
+"waxed oxidized copper" = "waxed_oxidized_copper_door"
+
+# =============================================================================
+# TRAPDOOR MATERIAL MAPPINGS
+# =============================================================================
+
+[trapdoor_materials]
+oak = "trapdoor"
+"oak wood" = "trapdoor"
+wooden = "trapdoor"
+spruce = "spruce_trapdoor"
+birch = "birch_trapdoor"
+jungle = "jungle_trapdoor"
+acacia = "acacia_trapdoor"
+"dark oak" = "dark_oak_trapdoor"
+mangrove = "mangrove_trapdoor"
+cherry = "cherry_trapdoor"
+bamboo = "bamboo_trapdoor"
+crimson = "crimson_trapdoor"
+warped = "warped_trapdoor"
+iron = "iron_trapdoor"
+copper = "copper_trapdoor"
+"exposed copper" = "exposed_copper_trapdoor"
+"weathered copper" = "weathered_copper_trapdoor"
+"oxidized copper" = "oxidized_copper_trapdoor"
+
+# =============================================================================
+# WALL MATERIAL MAPPINGS
+# =============================================================================
+
+[wall_materials]
+cobblestone = "cobblestone_wall"
+"mossy cobblestone" = "mossy_cobblestone_wall"
+"stone brick" = "stone_brick_wall"
+"mossy stone brick" = "mossy_stone_brick_wall"
+granite = "granite_wall"
+diorite = "diorite_wall"
+andesite = "andesite_wall"
+brick = "brick_wall"
+prismarine = "prismarine_wall"
+"red sandstone" = "red_sandstone_wall"
+sandstone = "sandstone_wall"
+"nether brick" = "nether_brick_wall"
+"red nether brick" = "red_nether_brick_wall"
+"end stone brick" = "end_stone_brick_wall"
+blackstone = "blackstone_wall"
+"polished blackstone" = "polished_blackstone_wall"
+"polished blackstone brick" = "polished_blackstone_brick_wall"
+"cobbled deepslate" = "cobbled_deepslate_wall"
+"polished deepslate" = "polished_deepslate_wall"
+"deepslate brick" = "deepslate_brick_wall"
+"deepslate tile" = "deepslate_tile_wall"
+"mud brick" = "mud_brick_wall"
+tuff = "tuff_wall"
+"polished tuff" = "polished_tuff_wall"
+"tuff brick" = "tuff_brick_wall"

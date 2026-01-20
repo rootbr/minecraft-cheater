@@ -1,6 +1,6 @@
 // Configuration constants and structures
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 use std::time::Duration;
@@ -47,7 +47,7 @@ impl Timing {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
     pub execution: ExecutionConfig,
@@ -56,13 +56,10 @@ pub struct Config {
     pub coordinates: CoordinatesConfig,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ExecutionConfig {
-    #[serde(default)]
-    pub url: Option<String>,
-
-    #[serde(default = "default_file")]
-    pub file: String,
+    #[serde(default = "default_url")]
+    pub url: String,
 
     #[serde(default)]
     pub skip: usize,
@@ -71,7 +68,7 @@ pub struct ExecutionConfig {
     pub material: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CoordinatesConfig {
     #[serde(default)]
     pub offset_x: i32,
@@ -86,8 +83,7 @@ pub struct CoordinatesConfig {
 impl Default for ExecutionConfig {
     fn default() -> Self {
         Self {
-            url: None,
-            file: default_file(),
+            url: default_url(),
             skip: 0,
             material: None,
         }
@@ -104,8 +100,8 @@ impl Default for CoordinatesConfig {
     }
 }
 
-fn default_file() -> String {
-    "build_commands_optimized.txt".to_string()
+fn default_url() -> String {
+    "https://www.grabcraft.com/minecraft/small-modern-villa/modern-houses".to_string()
 }
 
 impl Config {

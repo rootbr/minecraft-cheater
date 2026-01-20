@@ -3,7 +3,9 @@ mod commands;
 mod config;
 mod executor;
 mod feedback;
+mod gui;
 mod staircase;
+mod url_handler;
 
 use clap::{Parser, Subcommand};
 
@@ -29,16 +31,23 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    Cli,
     Staircase,
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let config = load_config(&cli.config)?;
 
     match cli.command {
-        Some(Commands::Staircase) => run_staircase(&config),
-        None => run_from_file(&config),
+        Some(Commands::Cli) => {
+            let config = load_config(&cli.config)?;
+            run_from_file(&config)
+        }
+        Some(Commands::Staircase) => {
+            let config = load_config(&cli.config)?;
+            run_staircase(&config)
+        }
+        None => gui::run_gui(),
     }
 }
 
@@ -54,8 +63,12 @@ fn run_staircase(config: &Config) -> Result<()> {
 }
 
 fn run_from_file(config: &Config) -> Result<()> {
-    println!("Читаю команды из файла: {}", config.execution.file);
-    let commands = load_from_file(&config.execution.file)?;
+    println!("Loading commands from URL: {}", config.execution.url);
+
+    let file_path = url_handler::ensure_commands_exist(&config.execution.url)?;
+    println!("Reading commands from: {}", file_path.display());
+
+    let commands = load_from_file(&file_path.to_string_lossy())?;
     execute_commands(config, commands)
 }
 

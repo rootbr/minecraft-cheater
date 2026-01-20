@@ -40,11 +40,11 @@ impl FeedbackDetector {
             height,
             panel_region: (75, 635, 75, 35),
             health_region: (440, 1355, 200, 20),
-            command_region: (1210, 1390, 25, 45),
+            command_region: (1212, 1392, 20, 40),
         })
     }
 
-    fn capture_screen(&mut self) -> DynamicImage {
+    fn capture_screen(&mut self) -> Result<DynamicImage, Box<dyn std::error::Error>> {
         // Wait for frame
         let frame = loop {
             if let Ok(frame) = self.capturer.frame() {
@@ -59,9 +59,9 @@ impl FeedbackDetector {
         }
 
         let img = image::RgbaImage::from_raw(self.width as u32, self.height as u32, rgba_data)
-            .expect("Failed to create image");
+            .ok_or("Failed to create image from raw data")?;
 
-        DynamicImage::ImageRgba8(img)
+        Ok(DynamicImage::ImageRgba8(img))
     }
 
     /// Wait for expected chat state, return last state on timeout
@@ -225,7 +225,16 @@ impl FeedbackDetector {
 
         for i in 0..seconds {
             // Capture and annotate
-            let screenshot = self.capture_screen();
+            let screenshot = match self.capture_screen() {
+                Ok(img) => img,
+                Err(e) => {
+                    println!("   [{}s] Failed to capture screen: {}", seconds - i, e);
+                    if i < seconds - 1 {
+                        thread::sleep(Duration::from_secs(1));
+                    }
+                    continue;
+                }
+            };
             let mut img = screenshot.to_rgba8();
 
             // Draw colored rectangles with filled semi-transparent overlay
@@ -243,9 +252,10 @@ impl FeedbackDetector {
 
             // Save preview
             let output_path = format!("/tmp/mc_preview_{}.png", i);
-            img.save(&output_path).expect("Failed to save preview");
-
-            println!("   [{}s] Preview saved: {}", seconds - i, output_path);
+            match img.save(&output_path) {
+                Ok(_) => println!("   [{}s] Preview saved: {}", seconds - i, output_path),
+                Err(e) => println!("   [{}s] Failed to save preview: {}", seconds - i, e),
+            }
 
             if i < seconds - 1 {
                 thread::sleep(Duration::from_secs(1));

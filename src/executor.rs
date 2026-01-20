@@ -140,6 +140,17 @@ impl CommandExecutor {
     }
 
     pub fn show_countdown(&mut self, seconds: u64) {
-        let _ = self.detector.show_live_preview(seconds as u32);
+        println!("⏱️  Starting execution in {} seconds...", seconds);
+        println!("   Switch to Minecraft window now!");
+        for i in (1..=seconds).rev() {
+            println!("   {}...", i);
+            thread::sleep(Duration::from_secs(1));
+        }
+        println!("✅ Starting execution!");
+    }
+
+    pub fn show_detection_preview(&mut self) -> Result<()> {
+        self.detector.show_live_preview(5);
+        Ok(())
     }
 }

@@ -1,21 +1,8 @@
-# MC-Commander Configuration File
-# All settings are optional. Uncomment and modify as needed.
-
 [execution]
-# Command file to execute (default: build_commands_optimized.txt)
-file = "build_commands_optimized.txt"
-
-# Skip first N commands (useful for resuming interrupted builds)
-# Area clearing is automatically skipped when skip > 0
+file = "buприложild_commands_optimized.txt"
 skip = 0
 
-# Filter commands by material (only execute commands containing this string)
-# When set, area clearing is automatically skipped
-# Example: "stone_stairs", "oak", "lantern"
-# material = "stone_stairs"
-
 [coordinates]
-# Coordinate offsets applied to all commands
 offset_x = -181
 offset_y = 70
 offset_z = -22
