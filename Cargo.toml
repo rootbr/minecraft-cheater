@@ -14,9 +14,6 @@ scrap = "0.5"
 # Image processing for pixel detection
 image = "0.24"
 
-# Error handling
-thiserror = "1.0"
-
 # Configuration file support
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"

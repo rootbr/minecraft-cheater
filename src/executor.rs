@@ -113,7 +113,6 @@ impl CommandExecutor {
     }
 
     fn paste_command(&mut self) -> Result<WaitStats> {
-        thread::sleep(Timing::key_press_delay());
         self.enigo.key(Key::Meta, Press)?;
         thread::sleep(Timing::key_press_delay());
 
@@ -123,6 +122,7 @@ impl CommandExecutor {
 
         let (state, stats) = self.detector.wait_for_state(ChatState::CommandEntered, Timing::state_timeout());
         if matches!(state, ChatState::CommandEntered) {
+            thread::sleep(Timing::key_press_delay());
             Ok(stats)
         } else {
             Err("Timeout waiting for command paste".into())

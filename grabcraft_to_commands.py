@@ -207,6 +207,45 @@ def pixel_to_grid(pixel_x: int, pixel_y: int, cell_size: int = 20,
     return grid_x, grid_z
 
 
+def rotate_material_direction(material: str, rotation: int) -> str:
+    """Rotate direction in GrabCraft material name (North, South, East, West)."""
+    if not material or rotation == 0:
+        return material
+
+    # Directions counter-clockwise
+    ccw_dirs = ['North', 'West', 'South', 'East']
+    
+    # Rotation steps (90 degrees each)
+    steps = (rotation // 90) % 4
+    
+    if steps == 0:
+        return material
+
+    def replace_dir(match):
+        d = match.group(0)
+        # Handle title case (North) and lower case (north)
+        is_upper = d[0].isupper()
+        d_lower = d.lower()
+        
+        # Find index in ccw_dirs
+        idx = -1
+        for i, cd in enumerate(ccw_dirs):
+            if cd.lower() == d_lower:
+                idx = i
+                break
+        
+        if idx != -1:
+            new_idx = (idx + steps) % 4
+            new_dir = ccw_dirs[new_idx]
+            return new_dir if is_upper else new_dir.lower()
+        return d
+
+    # Pattern to match directions as whole words
+    # Added some common variations like "facing north"
+    pattern = re.compile(r'\b(North|South|East|West|north|south|east|west)\b')
+    return pattern.sub(replace_dir, material)
+
+
 def extract_blocks_from_web(page_url: str) -> list[dict]:
     """Fetch and extract all blocks from GrabCraft page."""
     print(f'Fetching page: {page_url}')
@@ -289,31 +328,14 @@ def extract_blocks_from_web(page_url: str) -> list[dict]:
     rotation = detect_compass_rotation_from_html(html)
 
     if rotation != 0:
-        print(f'Applying {rotation}° rotation to all blocks...')
-
-        # Calculate grid dimensions (before rotation)
-        max_x = max(b['x'] for b in blocks)
-        max_z = max(b['z'] for b in blocks)
-        width = max_x + 1
-        depth = max_z + 1
-
-        # Apply rotation to all blocks
-        rotated_blocks = []
+        print(f'Rotating directions of oriented blocks by {rotation}°...')
         for b in blocks:
-            # Rotate coordinates only - block directions are already correct relative to compass
-            new_x, new_z = rotate_coordinates(b['x'], b['z'], rotation, width, depth)
-
-            rotated_blocks.append({
-                'layer': b['layer'],
-                'x': new_x,
-                'z': new_z,
-                'y': b['y'],
-                'material': b['material']
-            })
-
-        blocks = rotated_blocks
-        blocks.sort(key=lambda b: (b['layer'], b['z'], b['x']))
-        print(f'Rotation applied: {len(blocks)} blocks')
+            # Check if block has direction (stairs, ladders, etc.)
+            # Instead of complex checking, we just apply rotation to material description.
+            # If there's no direction word, it won't change.
+            b['material'] = rotate_material_direction(b['material'], rotation)
+        
+        print(f'Rotation applied to {len(blocks)} blocks')
 
     return blocks
 
