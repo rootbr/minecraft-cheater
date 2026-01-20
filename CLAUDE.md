@@ -43,10 +43,11 @@ cargo build --release
 
 ### Command Execution Flow
 
-1. Load commands from file (default: `build_commands_optimized.txt`, configurable via `--file`)
-2. Apply coordinate offsets (if specified via `--offset-x/y/z`)
-3. Wait 5 seconds for user to switch to Minecraft window
-4. For each command:
+1. Load settings from `config.toml` (or custom config file via `--config`)
+2. Load commands from file (configured in `execution.file`)
+3. Apply coordinate offsets (configured in `coordinates` section)
+4. Wait 3 seconds for user to switch to Minecraft window
+5. For each command:
    - Apply offset to coordinates
    - Copy modified command to clipboard
    - Press `T` to open chat
@@ -56,7 +57,27 @@ cargo build --release
 
 ### Configuration
 
-Hardcoded constants in `main.rs`:
+Configuration is managed through TOML file (`config.toml` by default).
+
+**Configuration file structure:**
+
+```toml
+[execution]
+file = "build_commands_optimized.txt"  # Command file to execute
+skip = 0                                # Skip first N commands
+# material = "stone_stairs"             # Filter by material (optional)
+
+[coordinates]
+offset_x = 0  # X coordinate offset
+offset_y = 0  # Y coordinate offset
+offset_z = 0  # Z coordinate offset
+```
+
+**Files:**
+- `config.toml` - Active configuration (not tracked in git)
+- `config.example.toml` - Example configuration with detailed comments
+
+**Staircase constants in `staircase.rs`:**
 - `START_X`, `START_Y`, `START_Z` - starting coordinates
 - `DIRECTION` - build direction (east/west/north/south)
 - `MATERIAL` - block material (supports modded blocks like `spark:*`)
@@ -65,54 +86,83 @@ Hardcoded constants in `main.rs`:
 
 ## CLI Usage
 
+### Basic Usage
+
+All settings are configured in `config.toml`:
+
 ```bash
-# Run from file (default: build_commands_optimized.txt)
+# Run with default config (config.toml)
 ./target/release/mc-commander
 
-# Specify custom command file
-./target/release/mc-commander --file build_commands.txt
-./target/release/mc-commander -f garden.mcfunction
+# Use custom config file
+./target/release/mc-commander --config my-build.toml
+./target/release/mc-commander -c tower.toml
 
-# Skip first N commands (resume interrupted build - skips area clearing)
-./target/release/mc-commander --skip 600
-./target/release/mc-commander -s 600
-
-# Apply coordinate offsets
-./target/release/mc-commander --offset-x 100 --offset-y 64 --offset-z -50
-
-# Filter by material (only execute commands containing specific string)
-# Note: Filter is applied AFTER skip
-./target/release/mc-commander --material stone_stairs
-./target/release/mc-commander -m oak_stairs
-
-# Combine skip and filter: skip first 100 commands, then filter by material
-# Example: Skip first 100, then build only oak_stairs from remaining commands
-./target/release/mc-commander --skip 100 -m oak_stairs
-
-# Full combination: file, skip, offset and filter
-./target/release/mc-commander -f tower.txt --skip 500 --offset-x 100 --offset-y 70 --offset-z 200 -m stone
-
-# Generate staircase
+# Generate staircase (ignores config file)
 ./target/release/mc-commander staircase
 ```
 
-**Options:**
-- `--file FILE` (or `-f FILE`) - Command file to execute (default: build_commands_optimized.txt)
-- `--skip N` (or `-s N`) - Skip first N commands (disables area clearing)
-- `--material STRING` (or `-m STRING`) - Filter commands by material (applied AFTER skip, disables area clearing)
-- `--offset-x N` - X coordinate offset (default: 0)
-- `--offset-y N` - Y coordinate offset (default: 0)
-- `--offset-z N` - Z coordinate offset (default: 0)
+### Configuration Examples
 
-**Execution order:**
-1. Read commands from file
-2. Calculate bounding box and clear commands (based on all commands)
-3. Apply `--skip` (skip first N commands)
-4. Apply `--material` filter (filter remaining commands by material)
-5. Execute clear commands (only if skip=0 and no material filter)
-6. Execute filtered commands with coordinate offsets
+**Basic build:**
+```toml
+[execution]
+file = "build_commands_optimized.txt"
+```
 
-**Note:** When using `--skip` to resume an interrupted build, the area clearing step is automatically skipped since the area was already cleared during the initial run.
+**Resume interrupted build at command 1500:**
+```toml
+[execution]
+file = "build_commands_optimized.txt"
+skip = 1500
+```
+
+**Build with coordinate offset:**
+```toml
+[execution]
+file = "house.txt"
+
+[coordinates]
+offset_x = 100
+offset_y = 64
+offset_z = -50
+```
+
+**Filter by material (build only stone stairs):**
+```toml
+[execution]
+file = "castle.txt"
+material = "stone_stairs"
+```
+
+**Full combination:**
+```toml
+[execution]
+file = "tower.txt"
+skip = 500
+material = "oak"
+
+[coordinates]
+offset_x = 100
+offset_y = 70
+offset_z = 200
+```
+
+### CLI Options
+
+- `--config FILE` (or `-c FILE`) - Configuration file to use (default: `config.toml`)
+
+### Execution Order
+
+1. Load configuration from TOML file
+2. Read commands from file (specified in config)
+3. Calculate bounding box and clear commands (based on all commands)
+4. Apply `skip` (skip first N commands)
+5. Apply `material` filter (filter remaining commands by material)
+6. Execute clear commands (only if skip=0 and no material filter)
+7. Execute filtered commands with coordinate offsets
+
+**Note:** When using `skip` to resume an interrupted build, the area clearing step is automatically skipped since the area was already cleared during the initial run.
 
 ## File Structure
 
