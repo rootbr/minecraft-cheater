@@ -1,0 +1,23 @@
+# Rust
+/target/
+Cargo.lock
+
+# Build command files
+*.txt
+!build_commands.txt
+!build_commands_optimized.txt
+
+# CSV exports
+*.csv
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.pyc
+*.pyo

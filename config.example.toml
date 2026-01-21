@@ -1,0 +1,50 @@
+# MC-Commander Configuration File Example
+# This file is automatically created and saved by the GUI
+# All settings are optional - defaults will be used for omitted values
+
+[execution]
+# GrabCraft URL - commands will be automatically generated from this URL
+# Files will be saved to: {name}/{category}/build_commands.txt and build_commands_optimized.txt
+# Default: "https://www.grabcraft.com/minecraft/small-modern-villa/modern-houses"
+url = "https://www.grabcraft.com/minecraft/small-modern-villa/modern-houses"
+
+# Skip first N commands (useful for resuming interrupted builds)
+# When skip > 0, area clearing is automatically disabled
+# Default: 0
+skip = 0
+
+# Filter commands by material (only execute commands containing this string)
+# When set, area clearing is automatically disabled
+# Examples: "stone_stairs", "oak_planks", "lantern", "brick"
+# Default: none (all commands executed)
+# material = "stone_stairs"
+
+[coordinates]
+# Coordinate offsets applied to all commands
+# Use these to relocate builds without regenerating command files
+# Default: 0 for all axes
+offset_x = 0
+offset_y = 0
+offset_z = 0
+
+# Example configurations:
+
+# Resume interrupted build at command 1500:
+# [execution]
+# skip = 1500
+
+# Build only stone stairs from a multi-material structure:
+# [execution]
+# material = "stone_stairs"
+
+# Relocate build 100 blocks east and 64 blocks up:
+# [coordinates]
+# offset_x = 100
+# offset_y = 64
+
+# Resume and relocate simultaneously:
+# [execution]
+# skip = 800
+# [coordinates]
+# offset_x = 50
+# offset_z = -30
