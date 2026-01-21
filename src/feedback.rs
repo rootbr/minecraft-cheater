@@ -15,6 +15,7 @@ pub enum ChatState {
 
 #[derive(Debug, Clone, Copy)]
 pub struct WaitStats {
+    #[allow(dead_code)]
     pub elapsed: Duration,
     pub iterations: i32,
 }

@@ -22,7 +22,7 @@ enum ExecutionState {
     Idle,
     Running,
     Completed,
-    Failed(String),
+    Failed,
 }
 
 pub struct McCommanderApp {
@@ -166,7 +166,7 @@ impl McCommanderApp {
                 }
                 Err(e) => {
                     logs.lock().unwrap().push(format!("Execution failed: {}", e));
-                    *execution_state = ExecutionState::Failed(e.to_string());
+                    *execution_state = ExecutionState::Failed;
                 }
             }
         });
@@ -189,28 +189,6 @@ impl McCommanderApp {
                 }
                 Err(e) => {
                     logs.lock().unwrap().push(format!("Failed to load from URL: {}", e));
-                }
-            }
-        });
-    }
-
-    fn optimize_commands(&mut self) {
-        if self.execution_url.is_empty() {
-            self.add_log("Error: URL is empty".to_string());
-            return;
-        }
-        self.add_log("Optimizing commands...".to_string());
-
-        let url = self.execution_url.clone();
-        let logs = Arc::clone(&self.logs);
-
-        thread::spawn(move || {
-            match url_handler::ensure_commands_exist(&url) {
-                Ok(path) => {
-                    logs.lock().unwrap().push(format!("Commands optimized: {}", path.display()));
-                }
-                Err(e) => {
-                    logs.lock().unwrap().push(format!("Failed to optimize: {}", e));
                 }
             }
         });
@@ -255,12 +233,12 @@ impl eframe::App for McCommanderApp {
 
             ui.horizontal(|ui| {
                 ui.label("URL:");
-                changed |= ui.text_edit_singleline(&mut self.execution_url).changed();
+                let available_width = ui.available_width() - 60.0;
+                let text_edit = egui::TextEdit::singleline(&mut self.execution_url)
+                    .desired_width(available_width);
+                changed |= ui.add(text_edit).changed();
                 if ui.button("Load").clicked() {
                     self.load_from_url();
-                }
-                if ui.button("Optimize").clicked() {
-                    self.optimize_commands();
                 }
             });
 
@@ -326,7 +304,7 @@ impl eframe::App for McCommanderApp {
                     ExecutionState::Completed => {
                         ui.colored_label(egui::Color32::GREEN, "✓ Completed");
                     }
-                    ExecutionState::Failed(_) => {
+                    ExecutionState::Failed => {
                         ui.colored_label(egui::Color32::RED, "✗ Failed");
                     }
                 }
