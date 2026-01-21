@@ -74,15 +74,9 @@ fn run_from_file(config: &Config) -> Result<()> {
 
 fn execute_commands(config: &Config, commands: Vec<String>) -> Result<()> {
     let offset = config.offset();
+    let clear_bbox = find_clear_bbox(config, &commands);
+    let commands = filter_commands(commands, config);
 
-    let clear_bbox = if config.execution.skip == 0 {
-        find_bounding_box(&commands)
-    } else {
-        None
-    };
-
-    let commands = apply_skip(commands, config.execution.skip);
-    let commands = apply_material_filter(commands, &config.execution.material);
     if commands.is_empty() {
         return Ok(());
     }
@@ -90,14 +84,46 @@ fn execute_commands(config: &Config, commands: Vec<String>) -> Result<()> {
     let mut executor = CommandExecutor::new()?;
     executor.show_countdown(COUNTDOWN_SECONDS);
 
+    perform_clear_phase(&mut executor, clear_bbox, offset, config)?;
+    perform_build_phase(&mut executor, &commands, offset, config.execution.skip)?;
+
+    Ok(())
+}
+
+fn find_clear_bbox(config: &Config, commands: &[String]) -> Option<commands::BoundingBox> {
+    if config.execution.skip == 0 {
+        find_bounding_box(commands)
+    } else {
+        None
+    }
+}
+
+fn filter_commands(commands: Vec<String>, config: &Config) -> Vec<String> {
+    let commands = apply_skip(commands, config.execution.skip);
+    apply_material_filter(commands, &config.execution.material)
+}
+
+fn perform_clear_phase(
+    executor: &mut CommandExecutor,
+    bbox: Option<commands::BoundingBox>,
+    offset: Offset,
+    config: &Config,
+) -> Result<()> {
     if config.execution.skip == 0 && config.execution.material.is_none() {
-        if let Some(bbox) = clear_bbox {
-            execute_clear(&mut executor, bbox, offset)?;
+        if let Some(bbox) = bbox {
+            execute_clear(executor, bbox, offset)?;
         }
     }
-
-    execute_build_phase(&mut executor, &commands, offset, config.execution.skip)?;
     Ok(())
+}
+
+fn perform_build_phase(
+    executor: &mut CommandExecutor,
+    commands: &[String],
+    offset: Offset,
+    skip_count: usize,
+) -> Result<()> {
+    execute_build_phase(executor, commands, offset, skip_count)
 }
 
 fn apply_skip(commands: Vec<String>, skip: usize) -> Vec<String> {

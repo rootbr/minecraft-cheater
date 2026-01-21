@@ -9,110 +9,51 @@ import csv
 import json
 import re
 import sys
+import argparse
 from collections import Counter
 from urllib.request import urlopen, Request
+from dataclasses import dataclass
+from typing import List, Dict, Tuple, Optional
 
-from grabcraft_to_bedrock import convert_grabcraft_to_bedrock, get_converter
+from grabcraft_to_bedrock import convert_grabcraft_to_bedrock
 
 # ============================================================================
 # COMPASS ROTATION DETECTION
 # ============================================================================
 
+def _find_compass_container(html: str) -> Optional[str]:
+    match = re.search(r'<div[^>]*class=["\']compass-container["\'][^>]*>(.*?)</div>', 
+                      html, re.DOTALL | re.IGNORECASE)
+    return match.group(1) if match else None
+
+def _extract_north_span(compass_html: str) -> Optional[Tuple[str, str]]:
+    # Try ID then Class
+    match = re.search(r'<span[^>]*id=["\']([^"\']+)["\'][^>]*class=["\']([^"\']*)["\'][^>]*>N</span>', 
+                      compass_html, re.IGNORECASE)
+    if match:
+        return match.group(1), match.group(2)
+    # Try Class then ID
+    match = re.search(r'<span[^>]*class=["\']([^"\']*)["\'][^>]*id=["\']([^"\']+)["\'][^>]*>N</span>', 
+                      compass_html, re.IGNORECASE)
+    if match:
+        return match.group(2), match.group(1)
+    return None
+
 def detect_compass_rotation_from_html(html: str) -> int:
-    """
-    Detect compass orientation from HTML compass container.
-
-    Returns:
-        0: North points up (standard)
-        90: North points left (rotated 90° CCW)
-        180: North points down
-        270: North points right (rotated 90° CW)
-    """
-    # Find compass container
-    compass_match = re.search(
-        r'<div[^>]*class=["\']compass-container["\'][^>]*>(.*?)</div>',
-        html,
-        re.DOTALL | re.IGNORECASE
-    )
-
-    if not compass_match:
-        print('No compass container found in HTML, assuming standard orientation (0°)')
+    """Detect compass orientation from HTML compass container."""
+    compass_html = _find_compass_container(html)
+    if not compass_html:
         return 0
 
-    compass_html = compass_match.group(1)
-
-    # Find span containing text "N" (North)
-    # ID indicates screen position, text content indicates actual direction
-    north_span_match = re.search(
-        r'<span[^>]*>N</span>',
-        compass_html,
-        re.IGNORECASE
-    )
-
-    if not north_span_match:
-        print('Could not find North (N) in compass, assuming standard orientation (0°)')
+    north_info = _extract_north_span(compass_html)
+    if not north_info:
         return 0
 
-    north_span = north_span_match.group(0)
-
-    # Extract the full span with its attributes
-    full_north_span = re.search(
-        r'<span[^>]*id=["\']([^"\']+)["\'][^>]*class=["\']([^"\']*)["\'][^>]*>N</span>',
-        compass_html,
-        re.IGNORECASE
-    )
-
-    if not full_north_span:
-        # Try alternate order (class before id)
-        full_north_span = re.search(
-            r'<span[^>]*class=["\']([^"\']*)["\'][^>]*id=["\']([^"\']+)["\'][^>]*>N</span>',
-            compass_html,
-            re.IGNORECASE
-        )
-        if full_north_span:
-            north_class = full_north_span.group(1)
-            north_id = full_north_span.group(2)
-        else:
-            print('Could not parse North span attributes, assuming standard orientation (0°)')
-            return 0
-    else:
-        north_id = full_north_span.group(1)
-        north_class = full_north_span.group(2)
-
-    # Determine rotation based on North position
-    # Standard: North is in position "north" (top) without pull classes
-    # 90° CCW: North is in position "west" (left) with pull-left
-    # 180°: North is in position "south" (bottom) with pull-right
-    # 270° CW: North is in position "east" (right) with pull-right
-
-    if north_id == 'north':
-        # North is at top position
-        if 'pull-left' in north_class:
-            # North at top but pulled left -> unusual, treat as standard
-            rotation = 0
-            print('Compass detected: North is UP (standard) -> 0° rotation')
-        elif 'pull-right' in north_class:
-            rotation = 0
-            print('Compass detected: North is UP (standard) -> 0° rotation')
-        else:
-            rotation = 0
-            print('Compass detected: North is UP (standard) -> 0° rotation')
-    elif north_id == 'west':
-        # North is at left position -> 90° CCW rotation
-        rotation = 90
-        print('Compass detected: North is LEFT -> 90° rotation')
-    elif north_id == 'east':
-        # North is at right position -> 90° CW rotation (270°)
-        rotation = 270
-        print('Compass detected: North is RIGHT -> 270° rotation')
-    elif north_id == 'south':
-        # North is at bottom position -> 180° rotation
-        rotation = 180
-        print('Compass detected: North is DOWN -> 180° rotation')
-    else:
-        rotation = 0
-        print(f'Unknown North position ({north_id}), assuming standard orientation (0°)')
-
+    north_id, _ = north_info
+    rotation_map = {'north': 0, 'west': 90, 'east': 270, 'south': 180}
+    rotation = rotation_map.get(north_id, 0)
+    
+    print(f'Compass detected: North is at {north_id.upper()} -> {rotation}° rotation')
     return rotation
 
 
@@ -397,81 +338,58 @@ def generate_commands(blocks: list[dict]) -> list[str]:
 # MAIN
 # ============================================================================
 
+def parse_arguments():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description='Convert GrabCraft blueprint to Minecraft Bedrock Edition commands.'
+    )
+    parser.add_argument('url', help='GrabCraft page URL')
+    parser.add_argument('-o', '--output', default='build_commands.txt', 
+                        help='Output file (default: build_commands.txt)')
+    parser.add_argument('--save-csv', nargs='?', const='blocks.csv', 
+                        help='Save blocks to CSV file (default: blocks.csv)')
+    return parser.parse_args()
+
 def main():
-    page_url = 'https://www.grabcraft.com/minecraft/oakshire-wall-tower/military-buildings'
-    output_file = 'build_commands.txt'
-    save_csv = False
-    csv_file = 'blocks.csv'
-
-    # Parse arguments
-    args = sys.argv[1:]
-    i = 0
-    while i < len(args):
-        if args[i] in ('-h', '--help'):
-            print('Usage: grabcraft_to_commands.py [URL] [options]')
-            print()
-            print('Convert GrabCraft blueprint to Minecraft Bedrock Edition commands.')
-            print('Generates pure /setblock commands - one per block, no optimizations.')
-            print()
-            print('Arguments:')
-            print('  URL                 GrabCraft page URL (required)')
-            print()
-            print('Options:')
-            print('  -o FILE             Output file (default: build_commands.txt)')
-            print('  --save-csv [FILE]   Save blocks to CSV file (default: blocks.csv)')
-            print()
-            print('Examples:')
-            print('  python3 grabcraft_to_commands.py https://www.grabcraft.com/minecraft/tower/...')
-            print('  python3 grabcraft_to_commands.py <URL> -o tower.txt')
-            print('  python3 grabcraft_to_commands.py <URL> --save-csv blocks.csv')
-            print()
-            print('Note: Use --offset-x/y/z in mc-commander CLI to apply coordinate offsets.')
-            print('Use optimize_commands.py to apply /fill optimization after generation.')
-            sys.exit(0)
-        elif args[i] == '-o' and i + 1 < len(args):
-            output_file = args[i + 1]
-            i += 2
-        elif args[i] == '--save-csv':
-            save_csv = True
-            if i + 1 < len(args) and not args[i + 1].startswith('-'):
-                csv_file = args[i + 1]
-                i += 2
-            else:
-                i += 1
-        elif not args[i].startswith('-'):
-            page_url = args[i]
-            i += 1
-        else:
-            i += 1
-
+    args = parse_arguments()
+    
     # Fetch blocks from web
-    blocks = extract_blocks_from_web(page_url)
+    try:
+        blocks = extract_blocks_from_web(args.url)
+    except Exception as e:
+        print(f"Error fetching blueprint: {e}")
+        sys.exit(1)
 
-    # Print material summary
+    # Print summary
     materials = Counter(b['material'] for b in blocks)
     print('\nMaterials:')
-    for mat, count in materials.most_common():
+    for mat, count in materials.most_common(10):
         print(f'  {mat}: {count}')
+    if len(materials) > 10:
+        print(f'  ... and {len(materials) - 10} more')
 
     # Save CSV if requested
-    if save_csv:
-        with open(csv_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=['layer', 'x', 'z', 'y', 'material'])
-            writer.writeheader()
-            writer.writerows(blocks)
-        print(f'\nSaved blocks to {csv_file}')
+    if args.save_csv:
+        _save_blocks_to_csv(blocks, args.save_csv)
 
     # Generate commands
     print('\nGenerating commands...')
     commands = generate_commands(blocks)
 
     # Write output
-    with open(output_file, 'w', encoding='utf-8') as f:
+    with open(args.output, 'w', encoding='utf-8') as f:
         for cmd in commands:
             f.write(cmd + '\n')
 
-    print(f'Generated {len(commands)} commands to {output_file}')
-    print(f'  /setblock commands: {len(commands)}')
+    print(f'Generated {len(commands)} commands to {args.output}')
+
+def _save_blocks_to_csv(blocks: List[Dict], filename: str):
+    """Save block data to CSV."""
+    with open(filename, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=['layer', 'x', 'z', 'y', 'material'])
+        writer.writeheader()
+        writer.writerows(blocks)
+    print(f'\nSaved blocks to {filename}')
 
 
 if __name__ == '__main__':

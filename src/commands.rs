@@ -114,36 +114,61 @@ fn apply_fill_offset(parts: &[&str], offset: Offset) -> String {
 }
 
 fn parse_coords(parts: &[&str]) -> Option<(i32, i32, i32)> {
-    if parts.len() < 3 {
-        return None;
+    match parts {
+        [x, y, z] => {
+            let x = x.parse().ok()?;
+            let y = y.parse().ok()?;
+            let z = z.parse().ok()?;
+            Some((x, y, z))
+        }
+        _ => None,
     }
-
-    let x = parts[0].parse().ok()?;
-    let y = parts[1].parse().ok()?;
-    let z = parts[2].parse().ok()?;
-
-    Some((x, y, z))
 }
 
 pub fn find_bounding_box(commands: &[String]) -> Option<BoundingBox> {
-    let mut min = (i32::MAX, i32::MAX, i32::MAX);
-    let mut max = (i32::MIN, i32::MIN, i32::MIN);
-    let mut found = false;
+    let mut bbox_builder = BoundingBoxBuilder::new();
 
     for cmd in commands {
         if let Some(coords) = extract_coordinates(cmd) {
-            for (x, y, z) in coords {
-                min = (min.0.min(x), min.1.min(y), min.2.min(z));
-                max = (max.0.max(x), max.1.max(y), max.2.max(z));
-                found = true;
+            for coord in coords {
+                bbox_builder.update(coord);
             }
         }
     }
 
-    if found {
-        Some(BoundingBox { min, max })
-    } else {
-        None
+    bbox_builder.build()
+}
+
+struct BoundingBoxBuilder {
+    min: (i32, i32, i32),
+    max: (i32, i32, i32),
+    found: bool,
+}
+
+impl BoundingBoxBuilder {
+    fn new() -> Self {
+        Self {
+            min: (i32::MAX, i32::MAX, i32::MAX),
+            max: (i32::MIN, i32::MIN, i32::MIN),
+            found: false,
+        }
+    }
+
+    fn update(&mut self, (x, y, z): (i32, i32, i32)) {
+        self.min = (self.min.0.min(x), self.min.1.min(y), self.min.2.min(z));
+        self.max = (self.max.0.max(x), self.max.1.max(y), self.max.2.max(z));
+        self.found = true;
+    }
+
+    fn build(self) -> Option<BoundingBox> {
+        if self.found {
+            Some(BoundingBox {
+                min: self.min,
+                max: self.max,
+            })
+        } else {
+            None
+        }
     }
 }
 
@@ -155,11 +180,11 @@ fn extract_coordinates(cmd: &str) -> Option<Vec<(i32, i32, i32)>> {
 
     let cmd_type = parts[0].trim_start_matches('/');
 
-    match cmd_type {
-        "setblock" if parts.len() >= 4 => {
+    match (cmd_type, parts.len()) {
+        ("setblock", len) if len >= 4 => {
             parse_coords(&parts[1..4]).map(|c| vec![c])
         }
-        "fill" if parts.len() >= 7 => {
+        ("fill", len) if len >= 7 => {
             let start = parse_coords(&parts[1..4])?;
             let end = parse_coords(&parts[4..7])?;
             Some(vec![start, end])
