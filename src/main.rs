@@ -11,7 +11,7 @@ use clap::{Parser, Subcommand};
 
 use clear::execute_clear;
 use commands::{apply_offset, find_bounding_box, load_from_file};
-use config::{Config, Offset, COUNTDOWN_SECONDS};
+use config::{Config, Offset};
 use executor::CommandExecutor;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -82,7 +82,7 @@ fn execute_commands(config: &Config, commands: Vec<String>) -> Result<()> {
     }
 
     let mut executor = CommandExecutor::new()?;
-    executor.show_countdown(COUNTDOWN_SECONDS);
+    executor.activate_minecraft_window()?;
 
     perform_clear_phase(&mut executor, clear_bbox, offset, config)?;
     perform_build_phase(&mut executor, &commands, offset, config.execution.skip)?;

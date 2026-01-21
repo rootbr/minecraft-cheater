@@ -1,8 +1,8 @@
 [execution]
-file = "buприложild_commands_optimized.txt"
+url = "https://www.grabcraft.com/minecraft/small-modern-restaurant-2/restaurants#blueprints"
 skip = 0
 
 [coordinates]
-offset_x = -181
-offset_y = 70
-offset_z = -22
+offset_x = -130
+offset_y = 64
+offset_z = 23

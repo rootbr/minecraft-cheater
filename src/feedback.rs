@@ -38,10 +38,15 @@ impl FeedbackDetector {
             capturer,
             width,
             height,
-            panel_region: (75, 635, 75, 35),
+            panel_region: (75, 625, 75, 30),
             health_region: (440, 1355, 200, 20),
-            command_region: (1212, 1392, 20, 40),
+            command_region: (1220, 1392, 15, 40),
         })
+    }
+
+    pub fn health_region_center(&self) -> (i32, i32) {
+        let (x, y, w, h) = self.health_region;
+        ((x + w / 2) as i32, (y + h / 2) as i32)
     }
 
     fn capture_screen(&mut self) -> Result<DynamicImage, Box<dyn std::error::Error>> {

@@ -4,7 +4,7 @@ use std::thread;
 
 use crate::clear::execute_clear;
 use crate::commands::{apply_offset, find_bounding_box, load_from_file};
-use crate::config::{Config, CoordinatesConfig, ExecutionConfig, Offset, COUNTDOWN_SECONDS};
+use crate::config::{Config, CoordinatesConfig, ExecutionConfig, Offset};
 use crate::executor::CommandExecutor;
 use crate::staircase;
 use crate::url_handler;
@@ -387,10 +387,10 @@ fn execute_commands(config: &Config, commands: Vec<String>, logs: &Arc<Mutex<Vec
     }
 
     logs.lock().unwrap().push(format!("Total commands to execute: {}", commands.len()));
-    logs.lock().unwrap().push(format!("Countdown: {} seconds...", COUNTDOWN_SECONDS));
+    logs.lock().unwrap().push("Activating Minecraft window...".to_string());
 
     let mut executor = CommandExecutor::new()?;
-    executor.show_countdown(COUNTDOWN_SECONDS);
+    executor.activate_minecraft_window()?;
 
     if config.execution.skip == 0 && config.execution.material.is_none() {
         if let Some(bbox) = clear_bbox {

@@ -2,8 +2,9 @@
 
 use arboard::Clipboard;
 use enigo::{
+    Button, Coordinate,
     Direction::{Click, Press, Release},
-    Enigo, Key, Keyboard, Settings,
+    Enigo, Key, Keyboard, Mouse, Settings,
 };
 use std::thread;
 use std::time::{Duration, Instant};
@@ -139,14 +140,18 @@ impl CommandExecutor {
         }
     }
 
-    pub fn show_countdown(&mut self, seconds: u64) {
-        println!("⏱️  Starting execution in {} seconds...", seconds);
-        println!("   Switch to Minecraft window now!");
-        for i in (1..=seconds).rev() {
-            println!("   {}...", i);
-            thread::sleep(Duration::from_secs(1));
-        }
-        println!("✅ Starting execution!");
+    pub fn activate_minecraft_window(&mut self) -> Result<()> {
+        println!("🖱️  Activating Minecraft window...");
+        let (x, y) = self.detector.health_region_center();
+        println!("   Clicking at health bar position: ({}, {})", x, y);
+
+        self.enigo.move_mouse(x, y, Coordinate::Abs)?;
+        thread::sleep(Duration::from_millis(100));
+        self.enigo.button(Button::Left, Click)?;
+        thread::sleep(Duration::from_millis(200));
+
+        println!("✅ Window activated!");
+        Ok(())
     }
 
     pub fn show_detection_preview(&mut self) -> Result<()> {
