@@ -9,7 +9,7 @@ use enigo::{
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::config::{Timing, STATE_TIMEOUT_SECS};
+use crate::config::Timing;
 use crate::feedback::{ChatState, FeedbackDetector, WaitStats};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;

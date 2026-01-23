@@ -11,6 +11,12 @@ north = 2
 west = 0
 east = 1
 
+[bed_direction_map]
+south = 2
+north = 0
+west = 3
+east = 1
+
 [sixway_facing]
 down = 0
 up = 1

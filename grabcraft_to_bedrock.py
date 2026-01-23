@@ -33,6 +33,7 @@ _BEDROCK_STATES = _load_bedrock_states()
 
 # Direction mappings
 STAIR_DIRECTION = _BEDROCK_STATES["stair_direction"]
+BED_DIRECTION = _BEDROCK_STATES["bed_direction_map"]
 SIXWAY_FACING = _BEDROCK_STATES["sixway_facing"]
 HORIZONTAL_FACING = _BEDROCK_STATES["horizontal_facing"]
 DOOR_DIRECTION = _BEDROCK_STATES["door_direction"]
@@ -409,6 +410,40 @@ class ColoredBlockConverter(BaseConverter):
         final_color = normalized_color if normalized_color else color_name.replace(" ", "_")
         return BedrockBlock(block_id=f'minecraft:{final_color}_{self.block_type}{self.suffix}', states={})
 
+class BedConverter(BaseConverter):
+    # Match both "Bed (...)" format and check for Foot/Head
+    PATTERN = re.compile(
+        r'^(?!(?:' + '|'.join(COLORS) + r')\s+)Bed\s*(?:\(([^)]*)\))?',
+        re.IGNORECASE
+    )
+
+    def convert(self, name: str, parser: 'GrabCraftToBedrockConverter') -> Optional[BedrockBlock]:
+        match = self.PATTERN.match(name)
+        if not match:
+            return None
+
+        props = (match.group(1) or "").lower()
+
+        # Check if this is a foot piece - skip it
+        if "foot" in props:
+            return BedrockBlock(block_id='__SKIP__', states={})  # Special marker to skip
+
+        direction = 0
+        for dir_name, dir_val in BED_DIRECTION.items():
+            if dir_name in props:
+                direction = dir_val
+                break
+
+        occupied = "occupied" in props
+
+        states = {
+            'direction': direction,
+            'occupied_bit': occupied,
+            'head_piece_bit': True
+        }
+
+        return BedrockBlock(block_id='minecraft:bed', states=states)
+
 class SignConverter(BaseConverter):
     PATTERN = re.compile(r'^(?:(.+?)\s+)?(?:Wall[- ]?(?:mounted|Mounted)?\s*)?Sign(?:\s+Block)?\s*[,\s]*(?:\(([^)]*)\)|(.+))?$', re.IGNORECASE)
     def convert(self, name: str, parser: 'GrabCraftToBedrockConverter') -> Optional[BedrockBlock]:
@@ -416,11 +451,11 @@ class SignConverter(BaseConverter):
         if not match: return None
         material = (match.group(1) or "Oak").lower().strip()
         props = (match.group(2) or match.group(3) or "").lower().strip()
-        
+
         is_wall = "wall" in name.lower() or "mounted" in props
         block_base = DOOR_MATERIALS.get(material, material.replace(' ', '_'))
         block_id = f"minecraft:{block_base}_wall_sign" if is_wall else f"minecraft:{block_base}_standing_sign"
-        
+
         states = {}
         if is_wall:
             states['facing_direction'] = HORIZONTAL_FACING.get(props, 2)
@@ -428,7 +463,7 @@ class SignConverter(BaseConverter):
             # Simple rotation mapping
             rot_map = {'south': 0, 'west': 4, 'north': 8, 'east': 12}
             states['ground_sign_direction'] = rot_map.get(props, 0)
-            
+
         return BedrockBlock(block_id=block_id, states=states)
 
 class SimpleBlockConverter(BaseConverter):
@@ -471,6 +506,7 @@ class GrabCraftToBedrockConverter:
             SlabConverter(),
             DoorConverter(),
             TrapdoorConverter(),
+            BedConverter(),
             ChestConverter(),
             FurnaceConverter(),
             LadderConverter(),

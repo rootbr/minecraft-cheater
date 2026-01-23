@@ -320,7 +320,7 @@ def generate_commands(blocks: list[dict]) -> list[str]:
 
     for b in blocks:
         block_id = get_block_id(b['material'])
-        if block_id is None:
+        if block_id is None or block_id.startswith('__SKIP__'):
             skipped += 1
             continue
 
@@ -334,7 +334,7 @@ def generate_commands(blocks: list[dict]) -> list[str]:
     commands.extend(attachable_commands)
 
     if skipped > 0:
-        print(f'Skipped {skipped} blocks with invalid/empty materials')
+        print(f'✓ Skipped {skipped} blocks (auto-generated parts like bed feet)')
 
     return commands
 
