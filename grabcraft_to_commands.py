@@ -52,8 +52,16 @@ def detect_compass_rotation_from_html(html: str) -> int:
     north_id, _ = north_info
     rotation_map = {'north': 0, 'west': 90, 'east': 270, 'south': 180}
     rotation = rotation_map.get(north_id, 0)
-    
-    print(f'Compass detected: North is at {north_id.upper()} -> {rotation}° rotation')
+
+    direction_names = {
+        'north': 'UP (standard)',
+        'west': 'LEFT',
+        'east': 'RIGHT',
+        'south': 'DOWN'
+    }
+    direction_name = direction_names.get(north_id, north_id.upper())
+
+    print(f'✓ Compass: North points {direction_name} → {rotation}° rotation needed')
     return rotation
 
 
@@ -271,9 +279,6 @@ def extract_blocks_from_web(page_url: str) -> list[dict]:
     if rotation != 0:
         print(f'Rotating directions of oriented blocks by {rotation}°...')
         for b in blocks:
-            # Check if block has direction (stairs, ladders, etc.)
-            # Instead of complex checking, we just apply rotation to material description.
-            # If there's no direction word, it won't change.
             b['material'] = rotate_material_direction(b['material'], rotation)
         
         print(f'Rotation applied to {len(blocks)} blocks')
@@ -352,19 +357,23 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-    
+
     # Fetch blocks from web
     try:
         blocks = extract_blocks_from_web(args.url)
     except Exception as e:
-        print(f"Error fetching blueprint: {e}")
+        print(f"\n✗ Error fetching blueprint: {e}")
         sys.exit(1)
 
     # Print summary
+    print('\n' + '=' * 60)
+    print('MATERIAL SUMMARY')
+    print('=' * 60)
     materials = Counter(b['material'] for b in blocks)
-    print('\nMaterials:')
+    print(f'Unique materials: {len(materials)}')
+    print(f'\nTop 10 materials:')
     for mat, count in materials.most_common(10):
-        print(f'  {mat}: {count}')
+        print(f'  • {mat}: {count}')
     if len(materials) > 10:
         print(f'  ... and {len(materials) - 10} more')
 
@@ -373,15 +382,22 @@ def main():
         _save_blocks_to_csv(blocks, args.save_csv)
 
     # Generate commands
-    print('\nGenerating commands...')
+    print('\n' + '=' * 60)
+    print('GENERATING MINECRAFT COMMANDS')
+    print('=' * 60)
     commands = generate_commands(blocks)
 
     # Write output
+    print(f'\nWriting commands to file...')
     with open(args.output, 'w', encoding='utf-8') as f:
         for cmd in commands:
             f.write(cmd + '\n')
 
-    print(f'Generated {len(commands)} commands to {args.output}')
+    print(f'✓ Generated {len(commands)} commands')
+    print(f'✓ Saved to: {args.output}')
+    print('\n' + '=' * 60)
+    print('CONVERSION COMPLETE')
+    print('=' * 60)
 
 def _save_blocks_to_csv(blocks: List[Dict], filename: str):
     """Save block data to CSV."""

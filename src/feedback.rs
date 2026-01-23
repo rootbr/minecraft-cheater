@@ -42,9 +42,9 @@ impl FeedbackDetector {
             capturer,
             width,
             height,
-            panel_region: (75, 625, 75, 30),
-            health_region: (440, 1355, 200, 20),
-            command_region: (1220, 1392, 15, 40),
+            panel_region: (75, 645, 75, 30),
+            health_region: (450, 1360, 200, 20),
+            command_region: (1250, 1392, 15, 40),
         })
     }
 

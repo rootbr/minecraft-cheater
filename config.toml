@@ -1,8 +1,9 @@
 [execution]
-url = "https://www.grabcraft.com/minecraft/small-modern-restaurant-2/restaurants#blueprints"
+url = "https://www.grabcraft.com/minecraft/suburban-family-house/modern-houses#blueprints"
 skip = 0
+material = "chest"
 
 [coordinates]
-offset_x = -130
+offset_x = -140
 offset_y = 64
-offset_z = 23
+offset_z = 15

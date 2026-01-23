@@ -6,10 +6,10 @@
 # =============================================================================
 
 [stair_direction]
-south = 2
-north = 3
-west = 1
-east = 0
+south = 3
+north = 2
+west = 0
+east = 1
 
 [sixway_facing]
 down = 0
@@ -20,10 +20,10 @@ west = 4
 east = 5
 
 [horizontal_facing]
-north = 2
-south = 3
-west = 4
-east = 5
+north = 3
+south = 2
+west = 5
+east = 4
 
 [door_direction]
 south = 2

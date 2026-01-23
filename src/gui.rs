@@ -177,18 +177,22 @@ impl McCommanderApp {
             self.add_log("Error: URL is empty".to_string());
             return;
         }
+        self.clear_logs();
         self.add_log(format!("Loading from URL: {}", self.execution_url));
+        self.add_log(String::new());
 
         let url = self.execution_url.clone();
         let logs = Arc::clone(&self.logs);
 
         thread::spawn(move || {
-            match url_handler::ensure_commands_exist(&url) {
+            match url_handler::ensure_commands_exist_with_logs(&url, Some(Arc::clone(&logs)), true) {
                 Ok(path) => {
-                    logs.lock().unwrap().push(format!("Commands loaded: {}", path.display()));
+                    logs.lock().unwrap().push(String::new());
+                    logs.lock().unwrap().push(format!("✓ Commands loaded: {}", path.display()));
                 }
                 Err(e) => {
-                    logs.lock().unwrap().push(format!("Failed to load from URL: {}", e));
+                    logs.lock().unwrap().push(String::new());
+                    logs.lock().unwrap().push(format!("✗ Failed to load from URL: {}", e));
                 }
             }
         });
@@ -246,33 +250,40 @@ impl eframe::App for McCommanderApp {
             ui.separator();
             ui.add_space(10.0);
 
-            if self.execution_mode == ExecutionMode::FromFile {
+            ui.horizontal(|ui| {
+                if self.execution_mode == ExecutionMode::FromFile {
+                    ui.group(|ui| {
+                        ui.horizontal(|ui| {
+                            ui.label("Skip commands:");
+                            changed |= ui.add(egui::TextEdit::singleline(&mut self.skip_commands)
+                                .desired_width(50.0)).changed();
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label("Material filter:");
+                            changed |= ui.add(egui::TextEdit::singleline(&mut self.material_filter)
+                                .desired_width(100.0)).changed();
+                        });
+                    });
+
+                    ui.add_space(10.0);
+                }
+
                 ui.group(|ui| {
-                    ui.label("Execution Settings");
                     ui.horizontal(|ui| {
-                        ui.label("Skip commands:");
-                        changed |= ui.text_edit_singleline(&mut self.skip_commands).changed();
+                        ui.label("X:");
+                        changed |= ui.add(egui::TextEdit::singleline(&mut self.offset_x)
+                            .desired_width(50.0)).changed();
+                        ui.label("Y:");
+                        changed |= ui.add(egui::TextEdit::singleline(&mut self.offset_y)
+                            .desired_width(50.0)).changed();
+                        ui.label("Z:");
+                        changed |= ui.add(egui::TextEdit::singleline(&mut self.offset_z)
+                            .desired_width(50.0)).changed();
                     });
-                    ui.horizontal(|ui| {
-                        ui.label("Material filter:");
-                        changed |= ui.text_edit_singleline(&mut self.material_filter).changed();
-                    });
-                });
-
-                ui.add_space(10.0);
-            }
-
-            ui.group(|ui| {
-                ui.label("Coordinate Offsets");
-                ui.horizontal(|ui| {
-                    ui.label("X:");
-                    changed |= ui.text_edit_singleline(&mut self.offset_x).changed();
-                    ui.label("Y:");
-                    changed |= ui.text_edit_singleline(&mut self.offset_y).changed();
-                    ui.label("Z:");
-                    changed |= ui.text_edit_singleline(&mut self.offset_z).changed();
                 });
             });
+
+            ui.add_space(10.0);
 
             if changed {
                 self.auto_save();
@@ -334,7 +345,8 @@ impl eframe::App for McCommanderApp {
 fn execute_from_file(config: &Config, logs: &Arc<Mutex<Vec<String>>>) -> Result<()> {
     logs.lock().unwrap().push(format!("Loading commands from URL: {}", config.execution.url));
 
-    let file_path = url_handler::ensure_commands_exist(&config.execution.url)?;
+    let file_path = url_handler::ensure_commands_exist_with_logs(&config.execution.url, Some(Arc::clone(logs)), false)?;
+    logs.lock().unwrap().push(String::new());
     logs.lock().unwrap().push(format!("Reading commands from: {}", file_path.display()));
 
     let commands = load_from_file(&file_path.to_string_lossy())?;
@@ -374,6 +386,8 @@ fn execute_commands(config: &Config, commands: Vec<String>, logs: &Arc<Mutex<Vec
         if let Some(bbox) = clear_bbox {
             logs.lock().unwrap().push("Clearing build area...".to_string());
             execute_clear(&mut executor, bbox, offset)?;
+            logs.lock().unwrap().push("Preparing for build phase...".to_string());
+            std::thread::sleep(std::time::Duration::from_millis(500));
         }
     }
 
@@ -411,6 +425,12 @@ fn execute_build_phase(
     logs: &Arc<Mutex<Vec<String>>>,
 ) -> Result<()> {
     let total = skip_count + commands.len();
+
+    if skip_count == 0 {
+        logs.lock().unwrap().push("Waiting for system to stabilize...".to_string());
+        std::thread::sleep(std::time::Duration::from_millis(500));
+    }
+
     for (i, command) in commands.iter().enumerate() {
         let cmd = apply_offset(command, offset);
         let stats = executor.execute(&cmd)?;
@@ -433,7 +453,8 @@ pub fn run_gui() -> Result<()> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([800.0, 550.0])
-            .with_min_inner_size([600.0, 400.0]),
+            .with_min_inner_size([600.0, 400.0])
+            .with_position([0.0, 0.0]),
         ..Default::default()
     };
 

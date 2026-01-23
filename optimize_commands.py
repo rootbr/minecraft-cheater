@@ -215,16 +215,25 @@ def optimize_grid(grid: dict) -> tuple[list, list]:
     for p, block_id in grid.items():
         if can_use_fill(block_id):
             material_counts[block_id] += 1
-            
+
     # 2. Process materials from most frequent to least frequent
-    print(f'Optimizing {len(material_counts)} materials...')
-    for block_id, _ in material_counts.most_common():
-        # Find 3D cuboids (this also covers 2D and 1D if profitable)
+    total_materials = len(material_counts)
+    print(f'Processing {total_materials} unique materials...')
+
+    processed_count = 0
+    for block_id, count in material_counts.most_common():
+        processed_count += 1
+        if processed_count % 10 == 0 or processed_count == 1 or processed_count == total_materials:
+            print(f'  [{processed_count}/{total_materials}] Processing material with {count} blocks...')
+
         regions = find_cuboids_for_material(grid, processed, block_id)
         for r in regions:
             fill_commands.append(f'/fill {r[0]} {r[1]} {r[2]} {r[3]} {r[4]} {r[5]} {r[6]}')
 
+    print(f'✓ Processed all materials')
+
     # 3. Generate setblock for remaining unprocessed blocks
+    print(f'Processing remaining individual blocks...')
     for (x, y, z), block_id in grid.items():
         if (x, y, z) not in processed:
             cmd = f'/setblock {x} {y} {z} {block_id}'
@@ -278,6 +287,10 @@ def apply_offset(commands: list, offset_x: int, offset_y: int, offset_z: int) ->
 
 
 def main():
+    print('=' * 60)
+    print('MINECRAFT COMMAND OPTIMIZER')
+    print('=' * 60)
+
     input_file = None
     output_file = None
     offset_x = 0
@@ -346,16 +359,21 @@ def main():
             output_file = f'{input_file}_optimized'
 
     # Read input into 3D grid
-    print(f'Reading: {input_file}')
+    print(f'\nReading input file...')
+    print(f'  File: {input_file}')
     grid = read_commands(input_file)
-    print(f'Parsed {len(grid)} blocks')
+    print(f'✓ Parsed {len(grid)} blocks')
 
     # Optimize or just convert to commands
     if use_optimization:
-        print('Optimizing with 3D cuboid and rectangle detection...')
+        print('\n' + '=' * 60)
+        print('OPTIMIZING COMMANDS')
+        print('=' * 60)
+        print('Using 3D cuboid and rectangle detection...')
         commands, (fill_count, setblock_count) = optimize_grid(grid)
+        print(f'✓ Optimization complete')
     else:
-        print('Converting without optimization...')
+        print('\nConverting without optimization...')
         commands = []
         for (x, y, z), block_id in sorted(grid.items()):
             commands.append(f'/setblock {x} {y} {z} {block_id}')
@@ -364,23 +382,36 @@ def main():
 
     # Apply offsets
     if offset_x != 0 or offset_y != 0 or offset_z != 0:
-        print(f'Applying offset: ({offset_x}, {offset_y}, {offset_z})')
+        print(f'\nApplying coordinate offset: ({offset_x}, {offset_y}, {offset_z})')
         commands = apply_offset(commands, offset_x, offset_y, offset_z)
+        print(f'✓ Offset applied')
 
     # Write output
+    print(f'\nWriting output file...')
     with open(output_file, 'w', encoding='utf-8') as f:
         for cmd in commands:
             f.write(cmd + '\n')
 
     # Summary
-    print(f'\nOutput: {output_file}')
-    print(f'Total commands: {len(commands)}')
-    print(f'  /fill: {fill_count}')
-    print(f'  /setblock: {setblock_count}')
+    print('\n' + '=' * 60)
+    print('OPTIMIZATION SUMMARY')
+    print('=' * 60)
+    print(f'Output file: {output_file}')
+    print(f'\nCommand breakdown:')
+    print(f'  • /fill commands:     {fill_count}')
+    print(f'  • /setblock commands: {setblock_count}')
+    print(f'  • Total:              {len(commands)}')
 
     if len(grid) > 0:
         reduction = (1 - len(commands) / len(grid)) * 100
-        print(f'Reduction: {reduction:.1f}% ({len(grid)} -> {len(commands)})')
+        print(f'\nOptimization result:')
+        print(f'  • Original: {len(grid)} commands')
+        print(f'  • Optimized: {len(commands)} commands')
+        print(f'  • Reduction: {reduction:.1f}%')
+
+    print('\n' + '=' * 60)
+    print('OPTIMIZATION COMPLETE')
+    print('=' * 60)
 
 
 if __name__ == '__main__':

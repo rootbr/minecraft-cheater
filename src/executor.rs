@@ -9,7 +9,7 @@ use enigo::{
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::config::Timing;
+use crate::config::{Timing, STATE_TIMEOUT_SECS};
 use crate::feedback::{ChatState, FeedbackDetector, WaitStats};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -45,13 +45,22 @@ impl CommandExecutor {
     }
 
     pub fn execute(&mut self, command: &str) -> Result<Option<CommandStats>> {
-        match self.execute_once(command) {
-            Ok(stats) => Ok(Some(stats)),
-            Err(e) => {
-                eprintln!("⚠ Команда пропущена: {}", e);
-                Ok(None)
+        const MAX_RETRIES: usize = 3;
+
+        for attempt in 1..=MAX_RETRIES {
+            match self.execute_once(command) {
+                Ok(stats) => return Ok(Some(stats)),
+                Err(e) => {
+                    if attempt < MAX_RETRIES {
+                        eprintln!("⚠ Попытка {}/{} не удалась: {}. Повтор...", attempt, MAX_RETRIES, e);
+                        thread::sleep(Duration::from_millis(200));
+                    } else {
+                        eprintln!("✗ Команда пропущена после {} попыток: {}", MAX_RETRIES, e);
+                    }
+                }
             }
         }
+        Ok(None)
     }
 
     fn execute_once(&mut self, command: &str) -> Result<CommandStats> {
@@ -114,12 +123,13 @@ impl CommandExecutor {
     }
 
     fn paste_command(&mut self) -> Result<WaitStats> {
+        thread::sleep(Timing::key_press_delay());
         self.enigo.key(Key::Meta, Press)?;
         thread::sleep(Timing::key_press_delay());
-
         self.enigo.key(PASTE_KEY, Click)?;
         thread::sleep(Timing::key_press_delay());
         self.enigo.key(Key::Meta, Release)?;
+        thread::sleep(Timing::key_press_delay());
 
         let (state, stats) = self.detector.wait_for_state(ChatState::CommandEntered, Timing::state_timeout());
         if matches!(state, ChatState::CommandEntered) {
@@ -148,9 +158,13 @@ impl CommandExecutor {
         self.enigo.move_mouse(x, y, Coordinate::Abs)?;
         thread::sleep(Duration::from_millis(100));
         self.enigo.button(Button::Left, Click)?;
-        thread::sleep(Duration::from_millis(200));
+        thread::sleep(Duration::from_millis(500));
 
-        println!("✅ Window activated!");
+        println!("   Ensuring chat is closed...");
+        self.ensure_chat_closed()?;
+        thread::sleep(Duration::from_millis(300));
+
+        println!("✅ Window activated and ready!");
         Ok(())
     }
 
