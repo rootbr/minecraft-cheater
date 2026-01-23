@@ -1,7 +1,7 @@
 [execution]
-url = "https://www.grabcraft.com/minecraft/suburban-family-house/modern-houses#blueprints"
+url = "https://www.grabcraft.com/minecraft/suburban-quartz-house-7/quartz-houses#blueprints"
 skip = 0
-material = "furna"
+material = "bed"
 
 [coordinates]
 offset_x = -140
