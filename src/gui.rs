@@ -237,12 +237,18 @@ impl eframe::App for McCommanderApp {
 
             ui.horizontal(|ui| {
                 ui.label("URL:");
-                let available_width = ui.available_width() - 60.0;
+                let available_width = ui.available_width() - 110.0;
                 let text_edit = egui::TextEdit::singleline(&mut self.execution_url)
                     .desired_width(available_width);
                 changed |= ui.add(text_edit).changed();
                 if ui.button("Load").clicked() {
                     self.load_from_url();
+                }
+                if ui.button("Open").clicked() {
+                    let url = self.execution_url.trim();
+                    if !url.is_empty() {
+                        ctx.open_url(egui::OpenUrl::new_tab(url));
+                    }
                 }
             });
 
