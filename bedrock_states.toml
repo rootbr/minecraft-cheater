@@ -5,51 +5,59 @@
 # DIRECTION MAPPINGS
 # =============================================================================
 
+# https://minecraft.fandom.com/wiki/Stairs
 [stair_direction]
-south = 3
-north = 2
-west = 0
-east = 1
+east = 0
+west = 1
+south = 2
+north = 3
 
+# https://minecraft.fandom.com/wiki/Bed
 [bed_direction_map]
 south = 0
+west = 1
 north = 2
-west = 3
-east = 1
+east = 3
 
+# https://minecraft.wiki/w/Sticky_Piston
 [sixway_facing]
 down = 0
 up = 1
+south = 2
+north = 3
+east = 4
+west = 5
+
+# https://minecraft.fandom.com/wiki/Chest
+[horizontal_facing]
 north = 2
 south = 3
 west = 4
 east = 5
 
-[horizontal_facing]
-north = 3
-south = 2
-west = 5
-east = 4
-
+# https://minecraft.fandom.com/wiki/Door
 [door_direction]
-south = 2
-north = 0
-west = 3
-east = 1
+east = 0
+south = 1
+west = 2
+north = 3
 
+# https://minecraft.wiki/w/Vines
 [vine_bits]
 south = 1
 west = 2
 north = 4
 east = 8
 
-[torch_facing]
-up = "top"
-north = "north"
-south = "south"
-east = "east"
-west = "west"
+#https://minecraft.wiki/w/Torch
+[torch_facing_direction]
+west = 1
+east = 2
+north = 3
+south = 4
+top = 5
 
+# https://minecraft.wiki/w/Stripped_Wood#Block_states
 [pillar_axis]
 y = "y"
 x = "x"
@@ -58,6 +66,7 @@ z = "z"
 "east/west" = "x"
 "up/down" = "y"
 
+# https://minecraft.wiki/w/Button#Block_states
 [button_facing]
 down = 0
 up = 1

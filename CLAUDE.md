@@ -199,22 +199,36 @@ python3 grabcraft_to_commands.py <URL> --save-csv blocks.csv
 - `--save-csv [FILE]` - Save blocks to CSV
 
 **Compass Rotation:**
-The script automatically detects the compass orientation from the webpage's HTML and applies rotation to coordinates. Block directions remain unchanged as they are already correct relative to the compass.
+The script automatically detects the compass orientation from the webpage's HTML and applies **coordinate rotation** to align North to standard direction. The structure itself is rotated, not the block orientations.
 
-- **Coordinates:** X/Z coordinates rotated around structure center
-- **Block Directions:** Preserved as-is (already correct relative to compass)
+- **Structure Coordinates:** X/Z coordinates rotated so North always points UP (+Z direction)
+- **Block Orientations:** Preserved as-is (already correct relative to structure)
+- **Cardinal Directions:** Aligned with Minecraft Bedrock Edition coordinate system
 
 Supported rotations:
 - **0°** - North UP (standard, no rotation applied)
-- **90°** - North LEFT → coordinates rotated 90° CCW
-- **180°** - North DOWN → coordinates rotated 180°
-- **270°** - North RIGHT → coordinates rotated 90° CW
+- **90°** - North LEFT → structure rotated 90° CW
+- **180°** - North DOWN → structure rotated 180°
+- **270°** - North RIGHT → structure rotated 90° CCW
+
+**Minecraft Bedrock Edition Cardinal Directions:**
+- Z decreases (-Z) → NORTH ⬆
+- Z increases (+Z) → SOUTH ⬇
+- X decreases (-X) → WEST ⬅
+- X increases (+X) → EAST ➡
 
 Example output:
 ```
-Compass detected: North is LEFT -> 90° rotation
-Applying 90° rotation to all blocks...
-Rotation applied: 609 blocks
+Compass detected: North is LEFT → 90° rotation needed
+Rotating structure coordinates by 90°...
+✓ Structure rotated - North now points UP
+Block directions remain unchanged (relative to structure)
+
+📍 Cardinal directions in Minecraft Bedrock Edition:
+   • Z decreases (-Z) → NORTH ⬆
+   • Z increases (+Z) → SOUTH ⬇
+   • X decreases (-X) → WEST ⬅
+   • X increases (+X) → EAST ➡
 ```
 
 ### optimize_commands.py

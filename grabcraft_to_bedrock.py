@@ -38,7 +38,7 @@ SIXWAY_FACING = _BEDROCK_STATES["sixway_facing"]
 HORIZONTAL_FACING = _BEDROCK_STATES["horizontal_facing"]
 DOOR_DIRECTION = _BEDROCK_STATES["door_direction"]
 VINE_BITS = _BEDROCK_STATES["vine_bits"]
-TORCH_FACING = _BEDROCK_STATES["torch_facing"]
+TORCH_FACING_DIRECTION = _BEDROCK_STATES["torch_facing_direction"]
 PILLAR_AXIS = _BEDROCK_STATES["pillar_axis"]
 BUTTON_FACING = _BEDROCK_STATES["button_facing"]
 
@@ -93,10 +93,10 @@ class BlockParser:
     
     DIRECTION_MAP = {
         'north': 'north', 'south': 'south', 'east': 'east', 'west': 'west',
-        'up': 'up', 'down': 'down',
+        'up': 'top', 'down': 'down',
         'facing north': 'north', 'facing south': 'south', 
         'facing east': 'east', 'facing west': 'west',
-        'facing up': 'up', 'facing down': 'down',
+        'facing up': 'top', 'facing down': 'down',
     }
 
     @staticmethod
@@ -258,7 +258,8 @@ class TorchConverter(BaseConverter):
         if not match: return None
         prefix, props = (match.group(1) or "").lower().strip(), (match.group(2) or "up").lower().strip()
         block_id = "soul_torch" if "soul" in prefix else ("redstone_torch" if "redstone" in prefix else "torch")
-        direction = parser._parse_direction(props) or "top"
+        direction = parser._parse_direction(props) or "west"
+        direction = TORCH_FACING_DIRECTION.get(direction, 2)
         return BedrockBlock(block_id=f'minecraft:{block_id}', states={'torch_facing_direction': direction})
 
 class VineConverter(BaseConverter):

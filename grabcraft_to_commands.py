@@ -67,26 +67,31 @@ def detect_compass_rotation_from_html(html: str) -> int:
 
 def rotate_coordinates(x: int, z: int, rotation: int, width: int, depth: int) -> tuple[int, int]:
     """
-    Rotate grid coordinates around center.
+    Rotate structure coordinates to align North to standard orientation (UP).
+
+    This physically rotates the entire structure so that regardless of the compass
+    orientation on GrabCraft, North always points "up" (positive Z direction) in
+    the final coordinates. Block orientations (stairs, doors, etc.) remain unchanged
+    as they are already correct relative to their local coordinate system.
 
     Args:
-        x, z: Original coordinates
-        rotation: Rotation in degrees (0, 90, 180, 270)
-        width, depth: Grid dimensions for calculating rotation center
+        x, z: Original grid coordinates
+        rotation: Rotation angle in degrees (0, 90, 180, 270)
+        width, depth: Grid dimensions before rotation
 
     Returns:
-        (new_x, new_z): Rotated coordinates
+        (new_x, new_z): Rotated coordinates with North aligned to UP
     """
     if rotation == 0:
         return x, z
     elif rotation == 90:
-        # 90° CW: (x, z) -> (depth - z - 1, x)
+        # 90° CW: North was LEFT, now UP
         return depth - z - 1, x
     elif rotation == 180:
-        # 180°: (x, z) -> (width - x - 1, depth - z - 1)
+        # 180°: North was DOWN, now UP
         return width - x - 1, depth - z - 1
     elif rotation == 270:
-        # 90° CCW: (x, z) -> (z, width - x - 1)
+        # 90° CCW: North was RIGHT, now UP
         return z, width - x - 1
     else:
         return x, z
@@ -156,53 +161,14 @@ def pixel_to_grid(pixel_x: int, pixel_y: int, cell_size: int = 20,
     return grid_x, grid_z
 
 
-def rotate_material_direction(material: str, rotation: int) -> str:
-    """Rotate direction in GrabCraft material name (North, South, East, West)."""
-    if not material or rotation == 0:
-        return material
-
-    # Directions counter-clockwise
-    ccw_dirs = ['North', 'West', 'South', 'East']
-    
-    # Rotation steps (90 degrees each)
-    steps = (rotation // 90) % 4
-    
-    if steps == 0:
-        return material
-
-    def replace_dir(match):
-        d = match.group(0)
-        # Handle title case (North) and lower case (north)
-        is_upper = d[0].isupper()
-        d_lower = d.lower()
-        
-        # Find index in ccw_dirs
-        idx = -1
-        for i, cd in enumerate(ccw_dirs):
-            if cd.lower() == d_lower:
-                idx = i
-                break
-        
-        if idx != -1:
-            new_idx = (idx + steps) % 4
-            new_dir = ccw_dirs[new_idx]
-            return new_dir if is_upper else new_dir.lower()
-        return d
-
-    # Pattern to match directions as whole words
-    # Added some common variations like "facing north"
-    pattern = re.compile(r'\b(North|South|East|West|north|south|east|west)\b')
-    return pattern.sub(replace_dir, material)
-
-
 def extract_blocks_from_web(page_url: str) -> list[dict]:
     """Fetch and extract all blocks from GrabCraft page."""
     print(f'Fetching page: {page_url}')
     html = fetch_page(page_url)
 
-    # Extract dimensions
-    dim_x, dim_y, dim_z = extract_dimensions(html)
-    print(f'Dimensions: {dim_x}x{dim_y}x{dim_z} (X x Y x Z)')
+    # Extract dimensions (from GrabCraft page, before rotation)
+    orig_dim_x, orig_dim_y, orig_dim_z = extract_dimensions(html)
+    print(f'Original dimensions: {orig_dim_x}W x {orig_dim_y}H x {orig_dim_z}D (as shown on GrabCraft)')
 
     # Find LayerMap JS URL
     layermap_url = extract_layermap_url(html)
@@ -270,18 +236,52 @@ def extract_blocks_from_web(page_url: str) -> list[dict]:
 
     # Convert to list
     blocks = list(blocks_dict.values())
-    blocks.sort(key=lambda b: (b['layer'], b['z'], b['x']))
     print(f'Extracted {len(blocks)} blocks (duplicates merged)')
 
     # Detect compass rotation from HTML
+    print('\nDetecting compass orientation...')
     rotation = detect_compass_rotation_from_html(html)
 
+    # Rotate coordinates to align North to standard orientation
     if rotation != 0:
-        print(f'Rotating directions of oriented blocks by {rotation}°...')
+        print(f'Rotating structure coordinates by {rotation}°...')
+        print(f'Grid before rotation: {len(xs_unique)}W x {len(ys_unique)}D')
+
         for b in blocks:
-            b['material'] = rotate_material_direction(b['material'], rotation)
-        
-        print(f'Rotation applied to {len(blocks)} blocks')
+            new_x, new_z = rotate_coordinates(b['x'], b['z'], rotation, len(xs_unique), len(ys_unique))
+            b['x'] = new_x
+            b['z'] = new_z
+
+        print(f'✓ Structure rotated - North now points UP')
+        print(f'Block directions remain unchanged (relative to structure)')
+    else:
+        print('✓ No rotation needed (North already points UP)')
+
+    # Calculate final dimensions after rotation
+    if rotation == 90 or rotation == 270:
+        # Width and depth are swapped
+        final_x = orig_dim_z  # West-East
+        final_z = orig_dim_x  # South-North
+    else:
+        final_x = orig_dim_x  # West-East
+        final_z = orig_dim_z  # South-North
+    final_y = orig_dim_y  # Height
+
+    print(f'\n📐 Final structure dimensions:')
+    print(f'   {final_x} blocks (West ⬅ to East ➡, X-axis)')
+    print(f'   {final_y} blocks (Bottom to Top, Y-axis)')
+    print(f'   {final_z} blocks (South ⬇ to North ⬆, Z-axis)')
+    print(f'   Total volume: {final_x * final_y * final_z} blocks')
+
+    print('\n📍 Cardinal directions in Minecraft Bedrock Edition:')
+    print('   • Z decreases (-Z) → NORTH ⬆')
+    print('   • Z increases (+Z) → SOUTH ⬇')
+    print('   • X decreases (-X) → WEST ⬅')
+    print('   • X increases (+X) → EAST ➡')
+    print('   • Sun rises in the EAST, sets in the WEST')
+
+    # Sort blocks after rotation: layer by layer, south to north, west to east
+    blocks.sort(key=lambda b: (b['layer'], b['z'], b['x']))
 
     return blocks
 

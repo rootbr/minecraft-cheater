@@ -413,6 +413,10 @@ def main():
     print('OPTIMIZATION COMPLETE')
     print('=' * 60)
 
+    print('\n📍 Reminder - Cardinal directions in Minecraft:')
+    print('   Z- → NORTH ⬆  |  Z+ → SOUTH ⬇')
+    print('   X- → WEST  ⬅  |  X+ → EAST  ➡')
+
 
 if __name__ == '__main__':
     main()
