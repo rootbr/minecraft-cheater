@@ -5,6 +5,9 @@ use std::time::{Duration, Instant};
 
 use crate::config::Timing;
 
+const CLICK_X: i32 = 620;
+const CLICK_Y: i32 = 700;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ChatState {
     Open,
@@ -46,8 +49,7 @@ impl FeedbackDetector {
     }
 
     pub fn health_region_center(&self) -> (i32, i32) {
-        let (x, y, w, h) = self.health_region;
-        ((x + w / 2) as i32, (y + h / 2) as i32)
+        (CLICK_X, CLICK_Y)
     }
 
     fn capture_screen(&mut self) -> Result<DynamicImage, Box<dyn std::error::Error>> {
