@@ -274,14 +274,27 @@ class VineConverter(BaseConverter):
         return BedrockBlock(block_id='minecraft:vine', states={'vine_direction_bits': bits})
 
 class LogConverter(BaseConverter):
-    PATTERN = re.compile(r'^(?:Stripped\s+)?(.+?)\s+(?:Wood|Log|Stem)\s*\(([^)]*)\)$', re.IGNORECASE)
+    PATTERN = re.compile(r'^(?:Stripped\s+)?(.+?)\s+(Wood|Log|Stem)\s*\(([^)]*)\)$', re.IGNORECASE)
     def convert(self, name: str, parser: 'GrabCraftToBedrockConverter') -> Optional[BedrockBlock]:
         match = self.PATTERN.match(name)
         if not match: return None
-        material, props = match.group(1).lower().strip(), match.group(2).lower().strip()
+        material, wood_type, props = match.group(1).lower().strip(), match.group(2).lower().strip(), match.group(3).lower().strip()
         is_stripped = "stripped" in name.lower()
+        
+        # Determine if it's a log or wood
+        suffix = "_log"
+        if wood_type == "wood" or wood_type == "stem":
+            suffix = "_wood" if wood_type == "wood" else "_stem"
+        
         block_name = GRABCRAFT_TO_BE.get(material, material.replace(' ', '_'))
-        if is_stripped and not block_name.startswith("stripped_"): block_name = f"stripped_{block_name}"
+        
+        # If block_name already ends with _log or _wood, don't append suffix
+        if not (block_name.endswith("_log") or block_name.endswith("_wood") or block_name.endswith("_stem")):
+            block_name = f"{block_name}{suffix}"
+            
+        if is_stripped and not block_name.startswith("stripped_"):
+            block_name = f"stripped_{block_name}"
+            
         axis = PILLAR_AXIS.get(props, "y")
         return BedrockBlock(block_id=f'minecraft:{block_name}', states={'pillar_axis': axis})
 
@@ -532,8 +545,8 @@ class GrabCraftToBedrockConverter:
             ColoredBlockConverter(re.compile(r'^(.+?)\s+(?:Stained\s+Clay|Terracotta)$', re.IGNORECASE), "terracotta"),
             ColoredBlockConverter(re.compile(r'^(.+?)\s+Concrete$', re.IGNORECASE), "concrete"),
             ColoredBlockConverter(re.compile(r'^(.+?)\s+Concrete\s+Powder$', re.IGNORECASE), "concrete_powder"),
-            ColoredBlockConverter(re.compile(r'^(.+?)\s+Glass$', re.IGNORECASE), "stained_glass"),
-            ColoredBlockConverter(re.compile(r'^(.+?)\s+Glass\s+Pane$', re.IGNORECASE), "stained_glass_pane"),
+            ColoredBlockConverter(re.compile(r'^(.+?)\s+(?:Stained\s+)?Glass$', re.IGNORECASE), "stained_glass"),
+            ColoredBlockConverter(re.compile(r'^(.+?)\s+(?:Stained\s+)?Glass\s+Pane$', re.IGNORECASE), "stained_glass_pane"),
             ColoredBlockConverter(re.compile(r'^(.+?)\s+Carpet$', re.IGNORECASE), "carpet"),
             ColoredBlockConverter(re.compile(r'^(.+?)\s+Bed\s*(?:\(([^)]*)\))?$', re.IGNORECASE), "bed"),
             ColoredBlockConverter(re.compile(r'^(.+?)\s+Candle\s*(?:\(([^)]*)\))?$', re.IGNORECASE), "candle"),

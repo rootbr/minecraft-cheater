@@ -1,8 +1,9 @@
 [execution]
 url = "https://www.grabcraft.com/minecraft/suburban-quartz-house-7/quartz-houses#blueprints"
 skip = 0
+material = "pill"
 
 [coordinates]
 offset_x = -140
-offset_y = 64
+offset_y = 70
 offset_z = 15
