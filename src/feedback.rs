@@ -103,8 +103,6 @@ impl FeedbackDetector {
         }
     }
 
-
-
     pub fn detect_chat_state(&mut self) -> ChatState {
         if self.is_command_empty() {
             return ChatState::Open;
@@ -222,57 +220,72 @@ impl FeedbackDetector {
         }
     }
 
-    /// Show live preview during countdown - capture and save screenshots every second
-    pub fn show_live_preview(&mut self, seconds: u32) {
-        println!("📹 Live preview: Capturing detection regions every second...");
-        println!("   🔴 Red box = Chat detection area");
-        println!("   🔵 Blue box = Health detection area");
-        println!("   🟡 Yellow box = Command detection area");
-        println!("   Position your Minecraft window in the bottom-left corner!");
-        println!();
-
-        for i in 0..seconds {
-            // Capture and annotate
-            let screenshot = match self.capture_screen() {
-                Ok(img) => img,
-                Err(e) => {
-                    println!("   [{}s] Failed to capture screen: {}", seconds - i, e);
-                    if i < seconds - 1 {
-                        thread::sleep(Duration::from_secs(1));
-                    }
-                    continue;
-                }
-            };
-            let mut img = screenshot.to_rgba8();
-
-            // Draw colored rectangles with filled semi-transparent overlay
-            let (chat_x, chat_y, chat_w, chat_h) = self.panel_region;
-            self.draw_filled_region(&mut img, chat_x, chat_y, chat_w, chat_h, Rgba([255, 0, 0, 60]));
-            self.draw_rectangle(&mut img, chat_x, chat_y, chat_w, chat_h, Rgba([255, 0, 0, 255]));
-
-            let (resp_x, resp_y, resp_w, resp_h) = self.health_region;
-            self.draw_filled_region(&mut img, resp_x, resp_y, resp_w, resp_h, Rgba([0, 0, 255, 60]));
-            self.draw_rectangle(&mut img, resp_x, resp_y, resp_w, resp_h, Rgba([0, 0, 255, 255]));
-
-            let (cmd_x, cmd_y, cmd_w, cmd_h) = self.command_region;
-            self.draw_filled_region(&mut img, cmd_x, cmd_y, cmd_w, cmd_h, Rgba([255, 255, 0, 60]));
-            self.draw_rectangle(&mut img, cmd_x, cmd_y, cmd_w, cmd_h, Rgba([255, 255, 0, 255]));
-
-            // Save preview
-            let output_path = format!("/tmp/mc_preview_{}.png", i);
-            match img.save(&output_path) {
-                Ok(_) => println!("   [{}s] Preview saved: {}", seconds - i, output_path),
-                Err(e) => println!("   [{}s] Failed to save preview: {}", seconds - i, e),
+    /// Capture single snapshot and display it - file is deleted after closing
+    pub fn show_live_preview(&mut self, _seconds: u32) {
+        let screenshot = match self.capture_screen() {
+            Ok(img) => img,
+            Err(e) => {
+                println!("❌ Failed to capture screen: {}", e);
+                return;
             }
+        };
+        let mut img = screenshot.to_rgba8();
 
-            if i < seconds - 1 {
-                thread::sleep(Duration::from_secs(1));
-            }
+        let (chat_x, chat_y, chat_w, chat_h) = self.panel_region;
+        self.draw_filled_region(&mut img, chat_x, chat_y, chat_w, chat_h, Rgba([255, 0, 0, 60]));
+        self.draw_rectangle(&mut img, chat_x, chat_y, chat_w, chat_h, Rgba([255, 0, 0, 255]));
+
+        let (resp_x, resp_y, resp_w, resp_h) = self.health_region;
+        self.draw_filled_region(&mut img, resp_x, resp_y, resp_w, resp_h, Rgba([0, 0, 255, 60]));
+        self.draw_rectangle(&mut img, resp_x, resp_y, resp_w, resp_h, Rgba([0, 0, 255, 255]));
+
+        let (cmd_x, cmd_y, cmd_w, cmd_h) = self.command_region;
+        self.draw_filled_region(&mut img, cmd_x, cmd_y, cmd_w, cmd_h, Rgba([255, 255, 0, 60]));
+        self.draw_rectangle(&mut img, cmd_x, cmd_y, cmd_w, cmd_h, Rgba([255, 255, 0, 255]));
+
+        let scratchpad_dir = "/tmp/mc-commander";
+        if let Err(e) = std::fs::create_dir_all(scratchpad_dir) {
+            println!("❌ Failed to create scratchpad directory: {}", e);
+            return;
         }
 
-        println!();
-        println!("✅ Preview complete! Last capture saved to /tmp/mc_preview_{}.png", seconds - 1);
-        println!("   Open this file to verify the regions are positioned correctly");
+        let output_path = format!("{}/mc_preview.png", scratchpad_dir);
+        match img.save(&output_path) {
+            Ok(_) => {
+                println!("✅ Snapshot saved: {}", output_path);
+                #[cfg(target_os = "macos")]
+                {
+                    if let Err(e) = std::process::Command::new("open")
+                        .arg("-W")
+                        .arg(&output_path)
+                        .status()
+                    {
+                        println!("❌ Failed to open preview: {}", e);
+                        return;
+                    }
+
+                    if let Err(e) = std::fs::remove_file(&output_path) {
+                        println!("⚠️  Failed to delete temporary file: {}", e);
+                    } else {
+                        println!("🗑️  Temporary snapshot deleted");
+                    }
+                }
+
+                #[cfg(not(target_os = "macos"))]
+                {
+                    if let Err(e) = std::process::Command::new("xdg-open")
+                        .arg(&output_path)
+                        .status()
+                    {
+                        println!("❌ Failed to open preview: {}", e);
+                        return;
+                    }
+                    println!("ℹ️  Snapshot will remain at: {}", output_path);
+                    println!("   (Delete manually after viewing)");
+                }
+            }
+            Err(e) => println!("❌ Failed to save snapshot: {}", e),
+        }
         println!();
     }
 
