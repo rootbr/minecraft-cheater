@@ -304,15 +304,23 @@ minecraft:stone_slab["minecraft:vertical_half"="bottom"]
 - `"bottom"` or `"top"`
 - Double slabs convert to full blocks (e.g., Double Stone Slab → smooth_stone)
 
-### Ladders / Torches / Chests
+### Ladders / Chests
 
 ```
 minecraft:ladder["facing_direction"=0]
-minecraft:wall_torch["facing_direction"=1]
 minecraft:chest["facing_direction"=2]
 ```
 
 - `facing_direction`: 0=north, 1=south, 3=west, 2=east
+
+### Torches
+
+```
+minecraft:torch
+minecraft:soul_torch
+minecraft:redstone_torch
+```
+
 
 ### Logs (with axis)
 

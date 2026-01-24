@@ -51,11 +51,11 @@ east = 8
 
 #https://minecraft.wiki/w/Torch
 [torch_facing_direction]
-west = 1
-east = 2
-north = 3
-south = 4
-top = 5
+west = "east"
+east = "west"
+north = "south"
+south = "north"
+top = "top"
 
 # https://minecraft.wiki/w/Stripped_Wood#Block_states
 [pillar_axis]
