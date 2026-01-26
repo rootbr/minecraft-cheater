@@ -9,7 +9,7 @@ use enigo::{
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::config::Timing;
+use crate::config::{ScreenRegionsConfig, Timing};
 use crate::feedback::{ChatState, FeedbackDetector, WaitStats};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -37,11 +37,20 @@ pub struct CommandExecutor {
 
 impl CommandExecutor {
     pub fn new() -> Result<Self> {
+        let config = ScreenRegionsConfig::default();
+        Self::with_config(&config)
+    }
+
+    pub fn with_config(config: &ScreenRegionsConfig) -> Result<Self> {
         let enigo = Enigo::new(&Settings::default())?;
         let clipboard = Clipboard::new()?;
-        let detector = FeedbackDetector::new()?;
+        let detector = FeedbackDetector::with_config(config)?;
 
-        Ok(Self { enigo, clipboard, detector })
+        Ok(Self {
+            enigo,
+            clipboard,
+            detector,
+        })
     }
 
     pub fn execute(&mut self, command: &str) -> Result<Option<CommandStats>> {
@@ -52,7 +61,10 @@ impl CommandExecutor {
                 Ok(stats) => return Ok(Some(stats)),
                 Err(e) => {
                     if attempt < MAX_RETRIES {
-                        eprintln!("⚠ Попытка {}/{} не удалась: {}. Повтор...", attempt, MAX_RETRIES, e);
+                        eprintln!(
+                            "⚠ Попытка {}/{} не удалась: {}. Повтор...",
+                            attempt, MAX_RETRIES, e
+                        );
                         thread::sleep(Duration::from_millis(200));
                     } else {
                         eprintln!("✗ Команда пропущена после {} попыток: {}", MAX_RETRIES, e);
@@ -114,7 +126,9 @@ impl CommandExecutor {
 
     fn open_chat(&mut self) -> Result<WaitStats> {
         self.enigo.key(CHAT_KEY, Click)?;
-        let (state, stats) = self.detector.wait_for_state(ChatState::Open, Timing::state_timeout());
+        let (state, stats) = self
+            .detector
+            .wait_for_state(ChatState::Open, Timing::state_timeout());
         if matches!(state, ChatState::Open) {
             Ok(stats)
         } else {
@@ -131,7 +145,9 @@ impl CommandExecutor {
         self.enigo.key(Key::Meta, Release)?;
         thread::sleep(Timing::key_press_delay());
 
-        let (state, stats) = self.detector.wait_for_state(ChatState::CommandEntered, Timing::state_timeout());
+        let (state, stats) = self
+            .detector
+            .wait_for_state(ChatState::CommandEntered, Timing::state_timeout());
         if matches!(state, ChatState::CommandEntered) {
             thread::sleep(Timing::key_press_delay());
             Ok(stats)
@@ -142,7 +158,9 @@ impl CommandExecutor {
 
     fn send_command(&mut self) -> Result<WaitStats> {
         self.enigo.key(Key::Return, Click)?;
-        let (state, stats) = self.detector.wait_for_state(ChatState::Closed, Timing::state_timeout());
+        let (state, stats) = self
+            .detector
+            .wait_for_state(ChatState::Closed, Timing::state_timeout());
         if matches!(state, ChatState::Closed) {
             Ok(stats)
         } else {

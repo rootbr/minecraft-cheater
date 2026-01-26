@@ -97,10 +97,12 @@ Minecraft chat → command execution
 
 ### Chat State Detection (feedback.rs)
 
-Screen regions monitored:
-- `panel_region`: (75, 645, 75, 30) - Chat panel area
-- `health_region`: (450, 1360, 200, 20) - Health bar (closed state)
-- `command_region`: (1250, 1392, 15, 40) - Command input area
+Screen regions monitored (configurable via `config.toml`):
+- `panel_region`: Default (75, 645, 75, 30) - Chat panel area
+- `health_region`: Default (450, 1360, 200, 20) - Health bar (closed state)
+- `command_region`: Default (1250, 1392, 15, 40) - Command input area
+
+**Note:** These regions are now configurable and will vary based on your screen resolution. Use the "Detection Areas" tab in the GUI to adjust them.
 
 Chat states detected via pixel color analysis:
 - `Open`: Command input empty (gray 117,117,117)
@@ -148,10 +150,11 @@ source .venv/bin/activate
 
 GUI features:
 - URL input with Load/Open buttons
-- Execution mode: From File or Staircase
+- Execution mode: From File, Staircase, or Detection Areas
 - Skip commands, material filter, coordinate offsets
 - Real-time logs with scroll-to-bottom
-- Detection areas preview
+- Detection areas preview with "Show Detection Areas" button
+- Detection Areas tab for adjusting screen regions
 - Auto-save to config.toml
 
 ### CLI Mode
@@ -176,6 +179,28 @@ skip = 0                    # Resume from command N
 offset_x = 0
 offset_y = 0
 offset_z = 0
+
+[screen_regions]
+# Adjust these values for your screen resolution
+# Use the "Detection Areas" tab in GUI to edit
+
+[screen_regions.panel_region]
+x = 75
+y = 645
+width = 75
+height = 30
+
+[screen_regions.health_region]
+x = 450
+y = 1360
+width = 200
+height = 20
+
+[screen_regions.command_region]
+x = 1250
+y = 1392
+width = 15
+height = 40
 ```
 
 ## Python Scripts

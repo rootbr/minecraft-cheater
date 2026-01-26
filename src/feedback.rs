@@ -3,7 +3,7 @@ use scrap::{Capturer, Display};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::config::Timing;
+use crate::config::{ScreenRegionsConfig, Timing};
 
 const CLICK_X: i32 = 620;
 const CLICK_Y: i32 = 700;
@@ -27,13 +27,18 @@ pub struct FeedbackDetector {
     capturer: Capturer,
     width: usize,
     height: usize,
-    panel_region: (u32, u32, u32, u32), // (x, y, width, height)
-    health_region: (u32, u32, u32, u32), // (x, y, width, height)
+    panel_region: (u32, u32, u32, u32),   // (x, y, width, height)
+    health_region: (u32, u32, u32, u32),  // (x, y, width, height)
     command_region: (u32, u32, u32, u32), // (x, y, width, height)
 }
 
 impl FeedbackDetector {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
+        let config = ScreenRegionsConfig::default();
+        Self::with_config(&config)
+    }
+
+    pub fn with_config(config: &ScreenRegionsConfig) -> Result<Self, Box<dyn std::error::Error>> {
         let display = Display::primary()?;
         let width = display.width();
         let height = display.height();
@@ -42,9 +47,24 @@ impl FeedbackDetector {
             capturer,
             width,
             height,
-            panel_region: (75, 645, 75, 30),
-            health_region: (450, 1360, 200, 20),
-            command_region: (1250, 1392, 15, 40),
+            panel_region: (
+                config.panel_region.x,
+                config.panel_region.y,
+                config.panel_region.width,
+                config.panel_region.height,
+            ),
+            health_region: (
+                config.health_region.x,
+                config.health_region.y,
+                config.health_region.width,
+                config.health_region.height,
+            ),
+            command_region: (
+                config.command_region.x,
+                config.command_region.y,
+                config.command_region.width,
+                config.command_region.height,
+            ),
         })
     }
 
@@ -73,7 +93,11 @@ impl FeedbackDetector {
     }
 
     /// Wait for expected chat state, return last state on timeout
-    pub fn wait_for_state(&mut self, expected: ChatState, timeout: Duration) -> (ChatState, WaitStats) {
+    pub fn wait_for_state(
+        &mut self,
+        expected: ChatState,
+        timeout: Duration,
+    ) -> (ChatState, WaitStats) {
         let start = Instant::now();
         let mut iteration = 0;
         loop {
@@ -81,14 +105,28 @@ impl FeedbackDetector {
             let elapsed = start.elapsed();
 
             if self.check_state(expected) {
-                return (expected, WaitStats { elapsed, iterations: iteration });
+                return (
+                    expected,
+                    WaitStats {
+                        elapsed,
+                        iterations: iteration,
+                    },
+                );
             }
 
             if elapsed >= timeout {
                 let actual = self.detect_chat_state();
-                println!("⏱ Timeout after {:?} ({} iterations), expected {:?}, got {:?}",
-                    elapsed, iteration, expected, actual);
-                return (actual, WaitStats { elapsed, iterations: iteration });
+                println!(
+                    "⏱ Timeout after {:?} ({} iterations), expected {:?}, got {:?}",
+                    elapsed, iteration, expected, actual
+                );
+                return (
+                    actual,
+                    WaitStats {
+                        elapsed,
+                        iterations: iteration,
+                    },
+                );
             }
             thread::sleep(Timing::poll_interval());
         }
@@ -97,7 +135,9 @@ impl FeedbackDetector {
     fn check_state(&mut self, expected: ChatState) -> bool {
         match expected {
             ChatState::Open => self.check_region(self.command_region) == ChatState::Open,
-            ChatState::CommandEntered => self.check_region(self.command_region) == ChatState::CommandEntered,
+            ChatState::CommandEntered => {
+                self.check_region(self.command_region) == ChatState::CommandEntered
+            }
             ChatState::Closed => self.check_region(self.health_region) == ChatState::Closed,
             ChatState::Undefined => false,
         }
@@ -154,19 +194,31 @@ impl FeedbackDetector {
                     // a = frame[pixel_start + 3];
 
                     // Check for Open (117, 117, 117)
-                    if !Self::color_matches(r, 117, 5) || !Self::color_matches(g, 117, 5) || !Self::color_matches(b, 117, 5) {
+                    if !Self::color_matches(r, 117, 5)
+                        || !Self::color_matches(g, 117, 5)
+                        || !Self::color_matches(b, 117, 5)
+                    {
                         all_198 = false;
                     }
 
                     // Check for CommandEntered (198, 198, 198)
-                    if !Self::color_matches(r, 198, 5) || !Self::color_matches(g, 198, 5) || !Self::color_matches(b, 198, 5) {
+                    if !Self::color_matches(r, 198, 5)
+                        || !Self::color_matches(g, 198, 5)
+                        || !Self::color_matches(b, 198, 5)
+                    {
                         all_117 = false;
                     }
 
                     // Check for Closed (217, 61, 41) and (148, 235, 58)
-                    if Self::color_matches(r, 217, 5) && Self::color_matches(g, 61, 5) && Self::color_matches(b, 41, 5) {
+                    if Self::color_matches(r, 217, 5)
+                        && Self::color_matches(g, 61, 5)
+                        && Self::color_matches(b, 41, 5)
+                    {
                         has_heart = true;
-                    } else if Self::color_matches(r, 148, 5) && Self::color_matches(g, 235, 5) && Self::color_matches(b, 58, 5) {
+                    } else if Self::color_matches(r, 148, 5)
+                        && Self::color_matches(g, 235, 5)
+                        && Self::color_matches(b, 58, 5)
+                    {
                         has_health = true;
                     }
                 }
@@ -186,14 +238,21 @@ impl FeedbackDetector {
         ChatState::Undefined
     }
 
-
     fn color_matches(value: u8, target: u8, tolerance: u8) -> bool {
         let min = target.saturating_sub(tolerance);
         let max = target.saturating_add(tolerance);
         value >= min && value <= max
     }
 
-    fn draw_rectangle(&self, img: &mut image::RgbaImage, x: u32, y: u32, width: u32, height: u32, color: Rgba<u8>) {
+    fn draw_rectangle(
+        &self,
+        img: &mut image::RgbaImage,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+        color: Rgba<u8>,
+    ) {
         let border_thickness = 5; // Make borders thicker (5 pixels)
 
         // Draw thick borders
@@ -232,16 +291,58 @@ impl FeedbackDetector {
         let mut img = screenshot.to_rgba8();
 
         let (chat_x, chat_y, chat_w, chat_h) = self.panel_region;
-        self.draw_filled_region(&mut img, chat_x, chat_y, chat_w, chat_h, Rgba([255, 0, 0, 60]));
-        self.draw_rectangle(&mut img, chat_x, chat_y, chat_w, chat_h, Rgba([255, 0, 0, 255]));
+        self.draw_filled_region(
+            &mut img,
+            chat_x,
+            chat_y,
+            chat_w,
+            chat_h,
+            Rgba([255, 0, 0, 60]),
+        );
+        self.draw_rectangle(
+            &mut img,
+            chat_x,
+            chat_y,
+            chat_w,
+            chat_h,
+            Rgba([255, 0, 0, 255]),
+        );
 
         let (resp_x, resp_y, resp_w, resp_h) = self.health_region;
-        self.draw_filled_region(&mut img, resp_x, resp_y, resp_w, resp_h, Rgba([0, 0, 255, 60]));
-        self.draw_rectangle(&mut img, resp_x, resp_y, resp_w, resp_h, Rgba([0, 0, 255, 255]));
+        self.draw_filled_region(
+            &mut img,
+            resp_x,
+            resp_y,
+            resp_w,
+            resp_h,
+            Rgba([0, 0, 255, 60]),
+        );
+        self.draw_rectangle(
+            &mut img,
+            resp_x,
+            resp_y,
+            resp_w,
+            resp_h,
+            Rgba([0, 0, 255, 255]),
+        );
 
         let (cmd_x, cmd_y, cmd_w, cmd_h) = self.command_region;
-        self.draw_filled_region(&mut img, cmd_x, cmd_y, cmd_w, cmd_h, Rgba([255, 255, 0, 60]));
-        self.draw_rectangle(&mut img, cmd_x, cmd_y, cmd_w, cmd_h, Rgba([255, 255, 0, 255]));
+        self.draw_filled_region(
+            &mut img,
+            cmd_x,
+            cmd_y,
+            cmd_w,
+            cmd_h,
+            Rgba([255, 255, 0, 60]),
+        );
+        self.draw_rectangle(
+            &mut img,
+            cmd_x,
+            cmd_y,
+            cmd_w,
+            cmd_h,
+            Rgba([255, 255, 0, 255]),
+        );
 
         let scratchpad_dir = "/tmp/mc-commander";
         if let Err(e) = std::fs::create_dir_all(scratchpad_dir) {
@@ -289,7 +390,15 @@ impl FeedbackDetector {
         println!();
     }
 
-    fn draw_filled_region(&self, img: &mut image::RgbaImage, x: u32, y: u32, width: u32, height: u32, color: Rgba<u8>) {
+    fn draw_filled_region(
+        &self,
+        img: &mut image::RgbaImage,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+        color: Rgba<u8>,
+    ) {
         // Fill region with semi-transparent color
         for dy in 0..height {
             for dx in 0..width {

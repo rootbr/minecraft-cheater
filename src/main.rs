@@ -81,7 +81,7 @@ fn execute_commands(config: &Config, commands: Vec<String>) -> Result<()> {
         return Ok(());
     }
 
-    let mut executor = CommandExecutor::new()?;
+    let mut executor = CommandExecutor::with_config(&config.screen_regions)?;
     executor.activate_minecraft_window()?;
 
     perform_clear_phase(&mut executor, clear_bbox, offset, config)?;
@@ -138,12 +138,10 @@ fn apply_skip(commands: Vec<String>, skip: usize) -> Vec<String> {
 
 fn apply_material_filter(commands: Vec<String>, material: &Option<String>) -> Vec<String> {
     match material {
-        Some(filter) => {
-            commands
-                .into_iter()
-                .filter(|cmd| cmd.contains(filter))
-                .collect()
-        }
+        Some(filter) => commands
+            .into_iter()
+            .filter(|cmd| cmd.contains(filter))
+            .collect(),
         None => commands,
     }
 }
@@ -158,12 +156,16 @@ fn execute_build_phase(
     for (i, command) in commands.iter().enumerate() {
         let cmd = apply_offset(command, offset);
         let stats = executor.execute(&cmd)?;
-        
+
         print!("[{}/{}] {}", skip_count + i + 1, total, cmd);
         if let Some(s) = stats {
-            println!(" ({}ms {}/{}/{} iterations)", 
-                s.total_time.as_millis(), 
-                s.iterations[0], s.iterations[1], s.iterations[2]);
+            println!(
+                " ({}ms {}/{}/{} iterations)",
+                s.total_time.as_millis(),
+                s.iterations[0],
+                s.iterations[1],
+                s.iterations[2]
+            );
         } else {
             println!();
         }

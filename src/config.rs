@@ -53,6 +53,9 @@ pub struct Config {
 
     #[serde(default)]
     pub coordinates: CoordinatesConfig,
+
+    #[serde(default)]
+    pub screen_regions: ScreenRegionsConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -77,6 +80,74 @@ pub struct CoordinatesConfig {
 
     #[serde(default)]
     pub offset_z: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ScreenRegion {
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
+}
+
+impl Default for ScreenRegion {
+    fn default() -> Self {
+        Self {
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ScreenRegionsConfig {
+    #[serde(default = "default_panel_region")]
+    pub panel_region: ScreenRegion,
+
+    #[serde(default = "default_health_region")]
+    pub health_region: ScreenRegion,
+
+    #[serde(default = "default_command_region")]
+    pub command_region: ScreenRegion,
+}
+
+fn default_panel_region() -> ScreenRegion {
+    ScreenRegion {
+        x: 75,
+        y: 645,
+        width: 75,
+        height: 30,
+    }
+}
+
+fn default_health_region() -> ScreenRegion {
+    ScreenRegion {
+        x: 450,
+        y: 1360,
+        width: 200,
+        height: 20,
+    }
+}
+
+fn default_command_region() -> ScreenRegion {
+    ScreenRegion {
+        x: 1250,
+        y: 1392,
+        width: 15,
+        height: 40,
+    }
+}
+
+impl Default for ScreenRegionsConfig {
+    fn default() -> Self {
+        Self {
+            panel_region: default_panel_region(),
+            health_region: default_health_region(),
+            command_region: default_command_region(),
+        }
+    }
 }
 
 impl Default for ExecutionConfig {
@@ -108,6 +179,12 @@ impl Config {
         let content = fs::read_to_string(path)?;
         let config: Config = toml::from_str(&content)?;
         Ok(config)
+    }
+
+    pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Box<dyn std::error::Error>> {
+        let content = toml::to_string_pretty(self)?;
+        fs::write(path, content)?;
+        Ok(())
     }
 
     pub fn offset(&self) -> Offset {
