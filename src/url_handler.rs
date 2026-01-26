@@ -1,7 +1,7 @@
+use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
-use std::io::{BufRead, BufReader};
 use std::thread;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -16,8 +16,7 @@ pub fn extract_path_from_url(url: &str) -> Option<String> {
 }
 
 pub fn get_commands_file_path(url: &str, optimized: bool) -> Result<PathBuf> {
-    let path = extract_path_from_url(url)
-        .ok_or("Invalid GrabCraft URL format")?;
+    let path = extract_path_from_url(url).ok_or("Invalid GrabCraft URL format")?;
 
     let filename = if optimized {
         "build_commands_optimized.txt"
@@ -25,7 +24,7 @@ pub fn get_commands_file_path(url: &str, optimized: bool) -> Result<PathBuf> {
         "build_commands.txt"
     };
 
-    Ok(PathBuf::from(path).join(filename))
+    Ok(PathBuf::from("grabcraft").join(path).join(filename))
 }
 
 pub fn ensure_commands_exist(url: &str) -> Result<PathBuf> {
@@ -43,7 +42,10 @@ pub fn ensure_commands_exist_with_logs(
     let files_exist = optimized_path.exists() || base_path.exists();
 
     if files_exist && !force_regenerate {
-        log_message(&logs, "Commands already exist. Loading from cache...".to_string());
+        log_message(
+            &logs,
+            "Commands already exist. Loading from cache...".to_string(),
+        );
         if optimized_path.exists() {
             return Ok(optimized_path);
         }
@@ -51,7 +53,10 @@ pub fn ensure_commands_exist_with_logs(
     }
 
     if files_exist && force_regenerate {
-        log_message(&logs, "Force regeneration requested. Deleting existing files...".to_string());
+        log_message(
+            &logs,
+            "Force regeneration requested. Deleting existing files...".to_string(),
+        );
         if optimized_path.exists() {
             std::fs::remove_file(&optimized_path).ok();
         }
@@ -129,10 +134,9 @@ fn run_python_with_output(
 }
 
 fn generate_commands_from_url(url: &str, logs: Option<Arc<Mutex<Vec<String>>>>) -> Result<()> {
-    let path = extract_path_from_url(url)
-        .ok_or("Invalid GrabCraft URL format")?;
+    let path = extract_path_from_url(url).ok_or("Invalid GrabCraft URL format")?;
 
-    let dir_path = PathBuf::from(&path);
+    let dir_path = PathBuf::from("grabcraft").join(&path);
     std::fs::create_dir_all(&dir_path)?;
 
     let base_output = dir_path.join("build_commands.txt");
@@ -157,7 +161,10 @@ fn generate_commands_from_url(url: &str, logs: Option<Arc<Mutex<Vec<String>>>>) 
     }
 
     log_message(&logs, String::new());
-    log_message(&logs, format!("✓ Base commands generated: {}", base_output.display()));
+    log_message(
+        &logs,
+        format!("✓ Base commands generated: {}", base_output.display()),
+    );
     log_message(&logs, String::new());
     log_message(&logs, "Optimizing commands...".to_string());
 
@@ -172,7 +179,13 @@ fn generate_commands_from_url(url: &str, logs: Option<Arc<Mutex<Vec<String>>>>) 
 
     if optimized_output.exists() {
         log_message(&logs, String::new());
-        log_message(&logs, format!("✓ Optimized commands generated: {}", optimized_output.display()));
+        log_message(
+            &logs,
+            format!(
+                "✓ Optimized commands generated: {}",
+                optimized_output.display()
+            ),
+        );
     }
 
     Ok(())

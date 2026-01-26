@@ -2,21 +2,114 @@
 
 ## Project Overview
 
-**mc-commander** is a Rust CLI tool for generating and auto-executing Minecraft **Bedrock Edition** commands via keyboard emulation. Designed for macOS with Minecraft running in Parallels Desktop.
+**mc-commander** is a Rust application with GUI and CLI modes for generating and auto-executing Minecraft **Bedrock Edition** commands via keyboard emulation. Designed for macOS with Minecraft running in Parallels Desktop.
 
 ## Technology Stack
 
-- **Language**: Rust 2021 edition
-- **CLI Framework**: clap 4.5 with derive macros
-- **Keyboard Emulation**: enigo 0.2
-- **Clipboard**: arboard 3.4
-- **Python Scripts**: grabcraft_to_commands.py, optimize_commands.py
-- **Target Platform**: macOS (uses Meta key for Cmd+V)
-- **Target Game**: Minecraft Bedrock Edition
+### Rust Dependencies (Cargo.toml)
+
+| Crate | Version | Purpose | Latest |
+|-------|---------|---------|--------|
+| clap | 4.5 | CLI argument parsing with derive macros | 4.5.x |
+| enigo | 0.2 | Cross-platform keyboard/mouse emulation | 0.5.0 |
+| arboard | 3.4 | Cross-platform clipboard access | 3.6.1 |
+| scrap | 0.5 | Screen capture for chat state detection | 0.5 |
+| image | 0.24 | Image processing for pixel detection | 0.24.x |
+| eframe | 0.31 | Native GUI framework wrapper | 0.33.3 |
+| egui | 0.31 | Immediate mode GUI library | 0.31.x |
+| serde | 1.0 | Serialization/deserialization | 1.0.x |
+| toml | 0.8 | TOML config file parsing | 0.8.x |
+
+### Python Dependencies
+
+- Python 3.13 (via .venv)
+- Standard library only (urllib, json, re, csv, argparse)
+- tomllib/tomli for TOML parsing in `grabcraft_to_bedrock.py`
+
+### Target Platform
+- **OS**: macOS (uses Meta key for Cmd+V)
+- **Game**: Minecraft Bedrock Edition (Windows via Parallels Desktop)
+
+## Architecture
+
+### Module Dependency Graph
+
+```
+main.rs
+├── config.rs        # Configuration loading and constants
+├── executor.rs      # Command execution via keyboard emulation
+│   ├── feedback.rs  # Screen capture and chat state detection
+│   └── config.rs    # Timing constants
+├── commands.rs      # Command parsing, offset application, bounding box
+├── clear.rs         # Area clearing before builds
+├── staircase.rs     # Staircase structure generator
+├── url_handler.rs   # GrabCraft URL → commands pipeline
+├── generator.rs     # Alternative URL-to-commands generator (unused)
+└── gui.rs           # eframe/egui GUI application
+```
+
+### Rust Modules Detail
+
+| Module | Lines | Purpose |
+|--------|-------|---------|
+| `main.rs` | ~150 | CLI parsing, execution orchestration |
+| `gui.rs` | ~350 | Full GUI with URL loading, execution, logs |
+| `executor.rs` | ~165 | Keyboard emulation, clipboard, retry logic |
+| `feedback.rs` | ~240 | Screen capture, pixel analysis, chat state detection |
+| `commands.rs` | ~170 | Command parsing, coordinate offset, bounding box |
+| `config.rs` | ~105 | TOML config, timing constants, offset struct |
+| `clear.rs` | ~55 | Area clearing with chunked fill commands |
+| `staircase.rs` | ~310 | Parametric staircase generator |
+| `url_handler.rs` | ~160 | GrabCraft URL processing, Python script invocation |
+| `generator.rs` | ~90 | Alternative generator (partially redundant) |
+
+### Python Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `grabcraft_to_commands.py` | Fetch GrabCraft blueprint → Bedrock commands |
+| `grabcraft_to_bedrock.py` | Block name conversion (GrabCraft → Bedrock) |
+| `optimize_commands.py` | Merge setblock → fill, apply offsets |
+| `expand_commands.py` | Verify optimization (expand fill → setblock) |
+| `export_pipeline_csv.py` | Full pipeline export with verification |
+
+### Data Flow
+
+```
+GrabCraft URL
+    ↓
+grabcraft_to_commands.py (fetch, parse, rotate)
+    ↓
+grabcraft_to_bedrock.py (block conversion via bedrock_states.toml)
+    ↓
+build_commands.txt (raw /setblock commands)
+    ↓
+optimize_commands.py (merge to /fill)
+    ↓
+build_commands_optimized.txt
+    ↓
+mc-commander (Rust)
+    ↓
+executor.rs (keyboard emulation)
+    ↓
+Minecraft chat → command execution
+```
+
+### Chat State Detection (feedback.rs)
+
+Screen regions monitored:
+- `panel_region`: (75, 645, 75, 30) - Chat panel area
+- `health_region`: (450, 1360, 200, 20) - Health bar (closed state)
+- `command_region`: (1250, 1392, 15, 40) - Command input area
+
+Chat states detected via pixel color analysis:
+- `Open`: Command input empty (gray 117,117,117)
+- `CommandEntered`: Text present (gray 198,198,198)
+- `Closed`: Health bar visible (red 217,61,41 + green 148,235,58)
 
 ## Installation
 
-### Rust CLI
+### Rust CLI/GUI
 
 ```bash
 # Install Rust
@@ -28,359 +121,261 @@ cargo build --release
 # Executable: target/release/mc-commander
 ```
 
+### Python Environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+# No additional packages needed - uses stdlib only
+```
+
 ### macOS Permissions
 
 **Required:** System Settings → Privacy & Security → Accessibility
 - Add Terminal (or your terminal app)
 - Add IDE if running from there
 
-## Architecture
+**Required:** System Settings → Privacy & Security → Screen Recording
+- Required for chat state detection (scrap crate)
 
-### Rust Modules
+## Usage
 
-- `main.rs` - CLI parsing, command execution loop, keyboard automation
-- `staircase.rs` - Staircase structure generator with configurable parameters
-
-### Command Execution Flow
-
-1. Load settings from `config.toml` (or custom config file via `--config`)
-2. Load commands from file (configured in `execution.file`)
-3. Apply coordinate offsets (configured in `coordinates` section)
-4. Wait 3 seconds for user to switch to Minecraft window
-5. For each command:
-   - Apply offset to coordinates
-   - Copy modified command to clipboard
-   - Press `T` to open chat
-   - Paste with Cmd+V
-   - Press Enter to execute
-   - Automatic detection of chat state for optimal timing
-
-### Configuration
-
-Configuration is managed through TOML file (`config.toml` by default).
-
-**Configuration file structure:**
-
-```toml
-[execution]
-file = "build_commands_optimized.txt"  # Command file to execute
-skip = 0                                # Skip first N commands
-# material = "stone_stairs"             # Filter by material (optional)
-
-[coordinates]
-offset_x = 0  # X coordinate offset
-offset_y = 0  # Y coordinate offset
-offset_z = 0  # Z coordinate offset
-```
-
-**Files:**
-- `config.toml` - Active configuration (not tracked in git)
-- `config.example.toml` - Example configuration with detailed comments
-
-**Staircase constants in `staircase.rs`:**
-- `START_X`, `START_Y`, `START_Z` - starting coordinates
-- `DIRECTION` - build direction (east/west/north/south)
-- `MATERIAL` - block material (supports modded blocks like `spark:*`)
-- `FLIGHT_HEIGHT`, `WIDTH` - staircase dimensions
-- `WALL_MATERIAL`, `LANTERN`, `LANTERN_INTERVAL` - decorative options
-
-## CLI Usage
-
-### Basic Usage
-
-All settings are configured in `config.toml`:
+### GUI Mode (Default)
 
 ```bash
-# Run with default config (config.toml)
 ./target/release/mc-commander
+```
 
-# Use custom config file
-./target/release/mc-commander --config my-build.toml
-./target/release/mc-commander -c tower.toml
+GUI features:
+- URL input with Load/Open buttons
+- Execution mode: From File or Staircase
+- Skip commands, material filter, coordinate offsets
+- Real-time logs with scroll-to-bottom
+- Detection areas preview
+- Auto-save to config.toml
 
-# Generate staircase (ignores config file)
+### CLI Mode
+
+```bash
+# Run from config file
+./target/release/mc-commander cli
+
+# Generate staircase
 ./target/release/mc-commander staircase
 ```
 
-### Configuration Examples
+### Configuration (config.toml)
 
-**Basic build:**
 ```toml
 [execution]
-file = "build_commands_optimized.txt"
-```
-
-**Resume interrupted build at command 1500:**
-```toml
-[execution]
-file = "build_commands_optimized.txt"
-skip = 1500
-```
-
-**Build with coordinate offset:**
-```toml
-[execution]
-file = "house.txt"
+url = "https://www.grabcraft.com/minecraft/small-modern-villa/modern-houses"
+skip = 0                    # Resume from command N
+# material = "stone_stairs" # Filter by material
 
 [coordinates]
-offset_x = 100
-offset_y = 64
-offset_z = -50
-```
-
-**Filter by material (build only stone stairs):**
-```toml
-[execution]
-file = "castle.txt"
-material = "stone_stairs"
-```
-
-**Full combination:**
-```toml
-[execution]
-file = "tower.txt"
-skip = 500
-material = "oak"
-
-[coordinates]
-offset_x = 100
-offset_y = 70
-offset_z = 200
-```
-
-### CLI Options
-
-- `--config FILE` (or `-c FILE`) - Configuration file to use (default: `config.toml`)
-
-### Execution Order
-
-1. Load configuration from TOML file
-2. Read commands from file (specified in config)
-3. Calculate bounding box and clear commands (based on all commands)
-4. Apply `skip` (skip first N commands)
-5. Apply `material` filter (filter remaining commands by material)
-6. Execute clear commands (only if skip=0 and no material filter)
-7. Execute filtered commands with coordinate offsets
-
-**Note:** When using `skip` to resume an interrupted build, the area clearing step is automatically skipped since the area was already cleared during the initial run.
-
-## File Structure
-
-```
-src/
-├── main.rs                  # CLI and execution engine
-└── staircase.rs             # Staircase command generator
-grabcraft_to_commands.py     # GrabCraft blueprint converter
-optimize_commands.py         # Command optimizer (fill merge + offset)
-build_commands.mcfunction    # Command input file (generated or manual)
+offset_x = 0
+offset_y = 0
+offset_z = 0
 ```
 
 ## Python Scripts
 
 ### grabcraft_to_commands.py
 
-Converts blueprints from [GrabCraft.com](https://www.grabcraft.com) to Minecraft Bedrock Edition commands with base coordinates (no offset applied).
-
-**✨ Automatic Compass Rotation Detection:** Script automatically detects compass orientation on GrabCraft pages and rotates the entire structure so that North always points UP. This ensures consistent building orientation regardless of how the blueprint was originally oriented on the website.
+Converts GrabCraft blueprints to Minecraft Bedrock commands.
 
 ```bash
-# Basic usage
-python3 grabcraft_to_commands.py <URL>
-
-# Custom output file
-python3 grabcraft_to_commands.py <URL> -o my_tower.mcfunction
-
-# Save CSV for analysis
-python3 grabcraft_to_commands.py <URL> --save-csv blocks.csv
+python3 grabcraft_to_commands.py <URL> [-o output.txt] [--save-csv blocks.csv]
 ```
 
-**Options:**
-- `-o FILE` - Output file (default: build_commands.txt)
-- `--save-csv [FILE]` - Save blocks to CSV
+Features:
+- Automatic compass rotation detection
+- LayerMap.js parsing
+- Auto-detected cell size and grid offsets
+- Block conversion via grabcraft_to_bedrock.py
 
-**Compass Rotation:**
-The script automatically detects the compass orientation from the webpage's HTML and applies **coordinate rotation** to align North to standard direction. The structure itself is rotated, not the block orientations.
+### grabcraft_to_bedrock.py
 
-- **Structure Coordinates:** X/Z coordinates rotated so North always points UP (+Z direction)
-- **Block Orientations:** Preserved as-is (already correct relative to structure)
-- **Cardinal Directions:** Aligned with Minecraft Bedrock Edition coordinate system
+Block conversion engine using:
+- `bedrock_states.toml` - Direction mappings, block name translations
+- Pattern-based converters for stairs, slabs, doors, etc.
+- Singleton converter instance for performance
 
-Supported rotations:
-- **0°** - North UP (standard, no rotation applied)
-- **90°** - North LEFT → structure rotated 90° CW
-- **180°** - North DOWN → structure rotated 180°
-- **270°** - North RIGHT → structure rotated 90° CCW
-
-**Minecraft Bedrock Edition Cardinal Directions:**
-- Z decreases (-Z) → NORTH ⬆
-- Z increases (+Z) → SOUTH ⬇
-- X decreases (-X) → WEST ⬅
-- X increases (+X) → EAST ➡
-
-Example output:
-```
-Compass detected: North is LEFT → 90° rotation needed
-Rotating structure coordinates by 90°...
-✓ Structure rotated - North now points UP
-Block directions remain unchanged (relative to structure)
-
-📍 Cardinal directions in Minecraft Bedrock Edition:
-   • Z decreases (-Z) → NORTH ⬆
-   • Z increases (+Z) → SOUTH ⬇
-   • X decreases (-X) → WEST ⬅
-   • X increases (+X) → EAST ➡
-```
+Converter classes:
+- StairConverter, SlabConverter, DoorConverter, TrapdoorConverter
+- ChestConverter, FurnaceConverter, LadderConverter, TorchConverter
+- VineConverter, LogConverter, ButtonConverter, LeverConverter
+- PistonConverter, ObserverConverter, DispenserConverter, HopperConverter
+- WallConverter, FenceGateConverter, LeavesConverter, SignConverter
+- ColoredBlockConverter (wool, concrete, terracotta, etc.)
+- BedConverter (skips foot pieces)
+- SimpleBlockConverter (fallback)
 
 ### optimize_commands.py
 
-Optimizes existing command files by merging /setblock into /fill and applying offsets.
+```bash
+python3 optimize_commands.py input.txt [output.txt] [-x N] [-y N] [-z N] [--no-fill]
+```
+
+Optimization algorithm:
+1. Parse all commands into 3D grid
+2. Sort materials by frequency
+3. For each material: greedy cuboid expansion
+4. Remaining blocks as /setblock
+5. Attachable blocks (ladders, torches) placed last
+
+Typical reduction: 30-70% fewer commands
+
+### expand_commands.py
+
+Verification tool - expands /fill back to /setblock for comparison.
 
 ```bash
-# Basic optimization
-python3 optimize_commands.py input.txt
-
-# With output file
-python3 optimize_commands.py input.txt output.txt
+python3 expand_commands.py original.txt optimized.txt
 ```
 
 ### export_pipeline_csv.py
 
-Export full pipeline from GrabCraft to CSV with all transformation stages. Shows original blocks, Bedrock conversion, optimization, and verification.
+Full pipeline export with verification.
 
 ```bash
-# Export pipeline to CSV
-python3 export_pipeline_csv.py <GRABCRAFT_URL> [output.csv]
-
-# Example
-python3 export_pipeline_csv.py https://www.grabcraft.com/.../house house_pipeline.csv
+python3 export_pipeline_csv.py <URL> [output.csv]
 ```
 
-**CSV Columns:**
-- `x, y, z` - Coordinates (after rotation)
-- `original_material` - GrabCraft block name
-- `bedrock_block` - Bedrock Edition ID with states
-- `optimized_block` - Block after optimization and expansion
-- `match` - ✓ if bedrock and optimized match
-
-**Generated files:**
-- `*_bedrock.txt` - Unoptimized Bedrock commands
-- `*_optimized.txt` - Optimized commands with /fill
-- `*.csv` - Full pipeline data sorted by coordinates
-
-### Command Optimization
-
-Both scripts optimize commands in priority order:
-1. 3D cuboids (2x2x2+) → single `/fill`
-2. 2D rectangles (2x2+) → single `/fill`
-3. Horizontal lines (2+ blocks) → single `/fill`
-4. Vertical columns (2+ blocks) → single `/fill`
-5. Single blocks → `/setblock`
-
-Attachable blocks (ladders, torches, vines) are placed last.
-
-**Typical reduction: 30-70% fewer commands**
+Generates: `*_bedrock.txt`, `*_optimized.txt`, `*.csv`
 
 ## Bedrock Edition Block States
 
-Scripts use correct Bedrock Edition syntax. Key differences from Java:
+All mappings defined in `bedrock_states.toml`.
 
-### Stairs
+### Direction Mappings
+
+| Block Type | State | Values |
+|------------|-------|--------|
+| Stairs | weirdo_direction | east=0, west=1, south=2, north=3 |
+| Beds | direction | south=0, west=1, north=2, east=3 |
+| 6-way (pistons) | facing_direction | down=0, up=1, south=2, north=3, east=4, west=5 |
+| Horizontal | facing_direction | north=2, south=3, west=4, east=5 |
+| Doors | direction | east=0, south=1, west=2, north=3 |
+| Vines | vine_direction_bits | south=1, west=2, north=4, east=8 (bitmask) |
+| Logs | pillar_axis | "x", "y", "z" |
+
+### Common Block Patterns
 
 ```
-minecraft:oak_stairs["upside_down_bit"=false,"weirdo_direction"=0]
-```
+# Stairs
+minecraft:oak_stairs["weirdo_direction"=3,"upside_down_bit"=false]
 
-- `upside_down_bit`: `false` = normal, `true` = upside-down
-- `weirdo_direction`: 1=north, 0=south, 2=west, 3=east
-
-Supported: oak, spruce, birch, jungle, acacia, dark_oak, cobblestone, stone_brick
-
-### Slabs
-
-```
+# Slabs
 minecraft:stone_slab["minecraft:vertical_half"="bottom"]
-```
 
-- `"bottom"` or `"top"`
-- Double slabs convert to full blocks (e.g., Double Stone Slab → smooth_stone)
-
-### Ladders / Chests
-
-```
-minecraft:ladder["facing_direction"=0]
-minecraft:chest["facing_direction"=2]
-```
-
-- `facing_direction`: 0=north, 1=south, 3=west, 2=east
-
-### Torches
-
-```
-minecraft:torch
-minecraft:soul_torch
-minecraft:redstone_torch
-```
-
-
-### Logs (with axis)
-
-```
-minecraft:oak_log["pillar_axis"="y"]
-```
-
-- `"x"`, `"y"`, or `"z"`
-
-### Doors
-
-```
+# Doors
 minecraft:oak_door["direction"=0,"open_bit"=false,"upper_block_bit"=false]
+
+# Logs
+minecraft:oak_log["pillar_axis"="y"]
+
+# Leaves (persistent)
+minecraft:oak_leaves["persistent_bit"=true,"update_bit"=false]
 ```
 
-- `direction`: 0=south, 1=west, 2=north, 3=east
-- `upper_block_bit`: `false`=lower, `true`=upper
-
-### Leaves
+## File Structure
 
 ```
-minecraft:oak_leaves["persistent_bit"=true]
+src/
+├── main.rs              # CLI entry point, orchestration
+├── gui.rs               # eframe/egui GUI application
+├── config.rs            # Config structs, timing constants
+├── executor.rs          # Keyboard emulation, command execution
+├── feedback.rs          # Screen capture, chat state detection
+├── commands.rs          # Command parsing, offsets, bounding box
+├── clear.rs             # Area clearing commands
+├── staircase.rs         # Staircase generator
+├── url_handler.rs       # GrabCraft URL → commands pipeline
+└── generator.rs         # Alternative generator
+
+*.py                     # Python conversion/optimization scripts
+bedrock_states.toml      # Block state mappings
+config.toml              # User configuration (not in git)
+config.example.toml      # Example configuration
+
+grabcraft/               # Generated command files by URL path
+  └── {name}/{category}/
+      ├── build_commands.txt
+      └── build_commands_optimized.txt
 ```
 
-- `persistent_bit`: `true` = won't decay
+## Technical Notes
 
-### Vines
+### Timing Constants (config.rs)
 
+```rust
+pub const KEY_PRESS_DELAY_MS: u64 = 50;    // Between key presses
+pub const STATE_TIMEOUT_SECS: u64 = 1;      // Chat state detection timeout
+pub const POLL_INTERVAL_MS: u64 = 40;       // Screen capture poll interval
+pub const CHUNK_SIZE: i32 = 32;             // Max /fill dimension
 ```
-minecraft:vine["vine_direction_bits"=4]
+
+### Keyboard Keycodes (macOS)
+
+```rust
+const CHAT_KEY: Key = Key::Other(17);  // 't' keycode
+const PASTE_KEY: Key = Key::Other(9);  // 'v' keycode
 ```
 
-- Bitmask: 1=south, 2=west, 4=north, 8=east
+### Command Execution Retry Logic
 
-## Command File Format
+- Max 3 retries per command
+- Escape key pressed if chat state unexpected
+- Stats tracked: total time, iterations per phase
 
-```mcfunction
-# Comments start with #
-/fill 0 64 0 10 64 10 minecraft:stone
-/setblock 5 65 5 minecraft:torch
+### Screen Capture
 
-# Lines starting with = are skipped (separators)
-===============================
-```
+- Uses `scrap` crate for cross-platform capture
+- BGRA pixel format, converted to RGBA for analysis
+- Color tolerance: ±5 for each RGB channel
 
 ## Troubleshooting
 
 **Commands not typing:**
 - Check Accessibility permissions in System Settings
-- Ensure Minecraft window is active
+- Check Screen Recording permissions (for chat detection)
+- Ensure Minecraft window is active and focused
+
+**Chat detection failing:**
+- Run "Show Detection Areas" to verify screen regions
+- Adjust region constants in feedback.rs for your resolution
+- Check that Minecraft UI scale matches expected positions
+
+**Python scripts failing:**
+- Ensure .venv is activated
+- Check network connectivity for GrabCraft fetches
+- Verify URL format: `https://www.grabcraft.com/minecraft/{name}/{category}`
 
 **Interrupted build:**
-- Note the last command number
-- Resume with `--skip <number>` (area clearing will be automatically skipped)
+- Note the last command number from logs
+- Set `skip = N` in config.toml
+- Area clearing automatically skipped when skip > 0
 
 **Stop execution:**
 - Press Ctrl+C in terminal
+- GUI: Close window (no graceful stop currently)
 
-## Notes
+## Potential Improvements
 
-- Designed for Parallels Desktop running Windows + Minecraft Bedrock
-- Uses clipboard for special characters in block names
-- Tested with builds up to 41,000+ blocks
+### Dependency Updates
+- enigo: 0.2 → 0.5.0 (breaking API changes)
+- arboard: 3.4 → 3.6.1 (Wayland support improvements)
+- eframe/egui: 0.31 → 0.33.3 (new features, breaking changes)
+
+### Code Quality
+- `generator.rs` partially duplicates `url_handler.rs` functionality
+- `feedback.rs:21` has `#[allow(dead_code)]` for `WaitStats.elapsed`
+- Hardcoded screen coordinates in `feedback.rs` (resolution-dependent)
+
+### Feature Ideas
+- Graceful stop button in GUI
+- Progress bar for long builds
+- Configurable screen regions
+- Multi-monitor support for detection
+- Build preview/visualization
