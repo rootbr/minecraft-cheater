@@ -583,6 +583,28 @@ lava = "lava"
 air = "air"
 
 # =============================================================================
+# PRESSURE PLATE MATERIAL MAPPINGS
+# =============================================================================
+
+[pressure_plate_materials]
+wooden = "wooden_pressure_plate"
+oak = "wooden_pressure_plate"
+spruce = "spruce_pressure_plate"
+birch = "birch_pressure_plate"
+jungle = "jungle_pressure_plate"
+acacia = "acacia_pressure_plate"
+"dark oak" = "dark_oak_pressure_plate"
+mangrove = "mangrove_pressure_plate"
+cherry = "cherry_pressure_plate"
+bamboo = "bamboo_pressure_plate"
+crimson = "crimson_pressure_plate"
+warped = "warped_pressure_plate"
+stone = "stone_pressure_plate"
+"polished blackstone" = "polished_blackstone_pressure_plate"
+"light weighted" = "light_weighted_pressure_plate"
+"heavy weighted" = "heavy_weighted_pressure_plate"
+
+# =============================================================================
 # STAIR MATERIAL MAPPINGS
 # =============================================================================
 

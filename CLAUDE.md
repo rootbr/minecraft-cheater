@@ -231,10 +231,111 @@ Converter classes:
 - ChestConverter, FurnaceConverter, LadderConverter, TorchConverter
 - VineConverter, LogConverter, ButtonConverter, LeverConverter
 - PistonConverter, ObserverConverter, DispenserConverter, HopperConverter
-- WallConverter, FenceGateConverter, LeavesConverter, SignConverter
+- WallConverter, FenceGateConverter, LeavesConverter, SignConverter, WallSignFixConverter
+- FireConverter, PressurePlateConverter
 - ColoredBlockConverter (wool, concrete, terracotta, etc.)
 - BedConverter (skips foot pieces)
 - SimpleBlockConverter (fallback)
+
+#### Adding New Converters
+
+> **Quick Reference:** See `ADDING_CONVERTERS.md` for step-by-step examples and common patterns.
+
+**Step 1: Add material mappings to `bedrock_states.toml`**
+
+For blocks with multiple materials (stairs, slabs, doors, etc.), add mappings:
+
+```toml
+# Example: Adding new pressure plate materials
+[pressure_plate_materials]
+wooden = "wooden_pressure_plate"
+oak = "wooden_pressure_plate"
+stone = "stone_pressure_plate"
+# ... add more materials
+```
+
+**Step 2: Create converter class in `grabcraft_to_bedrock.py`**
+
+```python
+class YourBlockConverter(BaseConverter):
+    """Converter for your block type."""
+    # Define regex pattern to match GrabCraft block names
+    PATTERN = re.compile(r'^(.+?)\s+Your\s+Block\s*\(([^)]*)\)$', re.IGNORECASE)
+
+    def convert(self, name: str, parser: 'GrabCraftToBedrockConverter') -> Optional[BedrockBlock]:
+        match = self.PATTERN.match(name)
+        if not match:
+            return None
+
+        # Extract material and properties
+        material = match.group(1).lower().strip()
+        props = match.group(2).lower().strip()
+
+        # Get block name from material mappings
+        block_name = BlockParser.get_material_block(
+            material,
+            YOUR_MATERIAL_MAP,  # From TOML
+            "_suffix"
+        )
+
+        # Parse direction/state from properties
+        direction = BlockParser.parse_direction_int(props, DIRECTION_MAP, default=0)
+
+        # Return BedrockBlock with states
+        return BedrockBlock(
+            block_id=f'minecraft:{block_name}',
+            states={
+                'state_name': state_value,
+                'another_state': another_value,
+            }
+        )
+```
+
+**Step 3: Load material mappings**
+
+Add to top of `grabcraft_to_bedrock.py`:
+
+```python
+YOUR_MATERIAL_MAP = _BEDROCK_STATES["your_material_map"]
+```
+
+**Step 4: Register converter**
+
+Add to `_init_converters()` method in order of precedence (more specific first):
+
+```python
+self.converters = [
+    StairConverter(),
+    # ... existing converters ...
+    YourBlockConverter(),  # Add here
+    # ... more converters ...
+    SimpleBlockConverter()  # Always last (fallback)
+]
+```
+
+**Step 5: Test**
+
+```python
+python3 -c "
+from grabcraft_to_bedrock import convert_grabcraft_to_bedrock
+print(convert_grabcraft_to_bedrock('Your Block Name (properties)'))
+"
+```
+
+**Common Patterns:**
+
+1. **Simple blocks with no states**: Use `SimpleBlockConverter` (fallback) and add mapping to `[grabcraft_to_be]` in TOML
+2. **Blocks with direction only**: Use existing direction mappings (`HORIZONTAL_FACING`, `SIXWAY_FACING`, etc.)
+3. **Blocks with material variants**: Create material mapping section in TOML, use `BlockParser.get_material_block()`
+4. **Blocks with custom states**: Create dedicated converter class
+5. **Blocks with age/power/level**: Parse numeric value from properties string
+
+**Examples:**
+
+- **FireConverter**: Parses `Fire (Age 15)` → `minecraft:fire["age"=15]`
+- **PressurePlateConverter**: Maps materials from TOML → `minecraft:{material}_pressure_plate`
+- **DoorConverter**: Complex states (direction, open_bit, upper_block_bit, door_hinge_bit)
+- **WallSignFixConverter**: Handles special GrabCraft naming (8-way compass to 4-way)
 
 ### optimize_commands.py
 
@@ -273,6 +374,39 @@ Generates: `*_bedrock.txt`, `*_optimized.txt`, `*.csv`
 
 All mappings defined in `bedrock_states.toml`.
 
+### Configuration Structure
+
+`bedrock_states.toml` contains all centralized mappings:
+
+**Direction Mappings:**
+- `[stair_direction]` - Stairs: east=0, west=1, south=2, north=3
+- `[bed_direction_map]` - Beds: south=0, west=1, north=2, east=3
+- `[sixway_facing]` - Pistons/Observers: down=0, up=1, south=2, north=3, east=4, west=5
+- `[horizontal_facing]` - Chests/Furnaces: north=2, south=3, west=4, east=5
+- `[door_direction]` - Doors: east=0, south=1, west=2, north=3
+- `[vine_bits]` - Vines (bitmask): south=1, west=2, north=4, east=8
+- `[torch_facing_direction]` - Torches: opposite direction mapping
+- `[pillar_axis]` - Logs: "x", "y", "z"
+- `[button_facing]` - Buttons: down=0, up=1, north=2, south=3, west=4, east=5
+- `[wall_sign_direction]` - Wall signs: 8-way compass to 6-way facing
+
+**Material Mappings:**
+- `[pressure_plate_materials]` - Pressure plates by material
+- `[stair_materials]` - Stairs by material
+- `[slab_materials]` - Slabs by material
+- `[double_slab_to_block]` - Double slab to full block
+- `[door_materials]` - Doors by material
+- `[trapdoor_materials]` - Trapdoors by material
+- `[wall_materials]` - Walls by material
+
+**Block Name Mappings:**
+- `[je_to_be_names]` - Java Edition → Bedrock Edition names
+- `[grabcraft_to_be]` - GrabCraft → Bedrock Edition names
+
+**Colors:**
+- `[colors]` - List of valid color names
+- `[grabcraft_color_map]` - GrabCraft color variations
+
 ### Direction Mappings
 
 | Block Type | State | Values |
@@ -284,6 +418,60 @@ All mappings defined in `bedrock_states.toml`.
 | Doors | direction | east=0, south=1, west=2, north=3 |
 | Vines | vine_direction_bits | south=1, west=2, north=4, east=8 (bitmask) |
 | Logs | pillar_axis | "x", "y", "z" |
+
+### Adding New Materials to TOML
+
+**Example 1: Add new stair material**
+
+Edit `bedrock_states.toml`:
+
+```toml
+[stair_materials]
+# Existing materials...
+tuff = "tuff_stairs"
+"polished tuff" = "polished_tuff_stairs"
+"tuff brick" = "tuff_brick_stairs"
+"new material" = "new_material_stairs"  # Add this line
+```
+
+**Example 2: Add new pressure plate**
+
+```toml
+[pressure_plate_materials]
+# Existing materials...
+"new material" = "new_material_pressure_plate"  # Add this line
+```
+
+**Example 3: Add new block name mapping**
+
+```toml
+[grabcraft_to_be]
+# Existing mappings...
+"grabcraft name" = "bedrock_id"  # Add this line
+"Stone Bricks" = "stone_bricks"
+"Chiseled Tuff" = "chiseled_tuff"
+```
+
+**Example 4: Add new direction mapping (rare)**
+
+```toml
+[your_new_direction_map]
+north = 0
+south = 1
+east = 2
+west = 3
+```
+
+Then load in `grabcraft_to_bedrock.py`:
+
+```python
+YOUR_DIRECTION_MAP = _BEDROCK_STATES["your_new_direction_map"]
+```
+
+**Tips:**
+- Use lowercase keys with spaces: `"dark oak"`, `"polished blackstone"`
+- Values are Bedrock block IDs without `minecraft:` prefix
+- Test changes: `python3 -c "from grabcraft_to_bedrock import convert_grabcraft_to_bedrock; print(convert_grabcraft_to_bedrock('Your Block Name'))"`
 
 ### Common Block Patterns
 

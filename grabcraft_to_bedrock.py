@@ -56,6 +56,7 @@ DOUBLE_SLAB_TO_BLOCK = _BEDROCK_STATES["double_slab_to_block"]
 DOOR_MATERIALS = _BEDROCK_STATES["door_materials"]
 TRAPDOOR_MATERIALS = _BEDROCK_STATES["trapdoor_materials"]
 WALL_MATERIALS = _BEDROCK_STATES["wall_materials"]
+PRESSURE_PLATE_MATERIALS = _BEDROCK_STATES["pressure_plate_materials"]
 
 
 # =============================================================================
@@ -197,13 +198,19 @@ class DoorConverter(BaseConverter):
         material, props = match.group(1).lower().strip(), match.group(2).lower().strip()
         block_name = BlockParser.get_material_block(material, DOOR_MATERIALS, "_door")
         direction = BlockParser.parse_direction_int(props, DOOR_DIRECTION, 2)
+
+        # door_hinge_bit: false=left, true=right
+        hinge_bit = False
+        if 'hinge' in props:
+            hinge_bit = 'right' in props
+
         return BedrockBlock(
             block_id=f'minecraft:{block_name}',
             states={
                 'direction': direction,
                 'open_bit': 'open' in props and 'closed' not in props,
                 'upper_block_bit': 'upper' in props,
-                'door_hinge_bit': 'right' in props,
+                'door_hinge_bit': hinge_bit,
             }
         )
 
@@ -507,6 +514,31 @@ class WallSignFixConverter(BaseConverter):
         # Bedrock Edition doesn't have oak_wall_sign, use birch as default
         return BedrockBlock(block_id='minecraft:birch_wall_sign', states={'facing_direction': facing})
 
+class FireConverter(BaseConverter):
+    """Converter for fire blocks with age state."""
+    PATTERN = re.compile(r'^Fire\s*(?:\(Age\s*(\d+)\))?$', re.IGNORECASE)
+
+    def convert(self, name: str, parser: 'GrabCraftToBedrockConverter') -> Optional[BedrockBlock]:
+        match = self.PATTERN.match(name)
+        if not match:
+            return None
+
+        age = int(match.group(1)) if match.group(1) else 0
+        return BedrockBlock(block_id='minecraft:fire', states={'age': age})
+
+class PressurePlateConverter(BaseConverter):
+    """Converter for pressure plates."""
+    PATTERN = re.compile(r'^(.+?)\s+Pressure\s+Plate$', re.IGNORECASE)
+
+    def convert(self, name: str, parser: 'GrabCraftToBedrockConverter') -> Optional[BedrockBlock]:
+        match = self.PATTERN.match(name)
+        if not match:
+            return None
+
+        material = match.group(1).lower().strip()
+        block_name = BlockParser.get_material_block(material, PRESSURE_PLATE_MATERIALS, "_pressure_plate")
+        return BedrockBlock(block_id=f'minecraft:{block_name}', states={})
+
 class SimpleBlockConverter(BaseConverter):
     """Fallback converter for simple blocks with no states."""
     def convert(self, name: str, parser: 'GrabCraftToBedrockConverter') -> Optional[BedrockBlock]:
@@ -566,6 +598,8 @@ class GrabCraftToBedrockConverter:
             RedstoneWireConverter(),
             WaterConverter(),
             FlowerConverter(),
+            FireConverter(),
+            PressurePlateConverter(),
             WallSignFixConverter(),
             SignConverter(),
             # Colored blocks
