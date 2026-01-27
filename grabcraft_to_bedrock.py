@@ -192,25 +192,64 @@ class SlabConverter(BaseConverter):
         )
 
 class DoorConverter(BaseConverter):
+    """
+    Converter for door blocks with automatic hinge detection.
+
+    GrabCraft doors consist of TWO blocks:
+    - Lower block: (x, y, z, layer) - has direction and open/closed state
+    - Upper block: (x+1, y, z, layer+1) - has hinge (left/right) and power state
+
+    This converter:
+    - Skips Upper blocks (returns __SKIP__)
+    - Processes Lower blocks with hinge info from cache
+
+    To use correctly:
+    1. Pre-register all Upper door blocks via converter.register_door_upper_block()
+    2. Then convert Lower blocks with coordinates: convert(name, x, y, z, layer)
+    3. Converter will automatically use cached hinge info
+    """
     PATTERN = re.compile(r'^(.+?)\s+Door\s*\(([^)]*)\)?$', re.IGNORECASE)
+
     def convert(self, name: str, parser: 'GrabCraftToBedrockConverter') -> Optional[BedrockBlock]:
         match = self.PATTERN.match(name)
-        if not match: return None
+        if not match:
+            return None
+
         material, props = match.group(1).lower().strip(), match.group(2).lower().strip()
+
+        # Process door block
         block_name = BlockParser.get_material_block(material, DOOR_MATERIALS, "_door")
+
+        # Parse direction from Lower block properties
         direction = BlockParser.parse_direction_int(props, DOOR_DIRECTION, 2)
 
+        # Parse open state
+        is_open = 'open' in props and 'closed' not in props
+
+        # Parse upper_block_bit (should be False for Lower blocks)
+        is_upper = 'upper' in props
+
+        # Parse hinge from properties or cache
         # door_hinge_bit: false=left, true=right
+        # Note: logic is inverted from GrabCraft properties per user request
         hinge_bit = False
         if 'hinge' in props:
-            hinge_bit = 'right' in props
+            # Hinge info in properties (rare for Lower blocks, common for Upper)
+            # Inverted: 'left' -> True, 'right' -> False
+            hinge_bit = 'left' in props
+        elif hasattr(parser, '_current_coords') and parser._current_coords:
+            # Check cache for hinge info from Upper block
+            x, y, z, layer = parser._current_coords
+            cache_key = (x, y, z, layer)
+            if cache_key in parser.door_hinge_cache:
+                hinge_bit = parser.door_hinge_cache[cache_key]
 
         return BedrockBlock(
             block_id=f'minecraft:{block_name}',
             states={
                 'direction': direction,
-                'open_bit': 'open' in props and 'closed' not in props,
-                'upper_block_bit': 'upper' in props,
+                'open_bit': is_open,
+                'upper_block_bit': is_upper,
                 'door_hinge_bit': hinge_bit,
             }
         )
@@ -571,12 +610,16 @@ class SimpleBlockConverter(BaseConverter):
 class GrabCraftToBedrockConverter:
     """
     Converts GrabCraft's human-readable block format to Bedrock Edition.
+
+    For CSV processing: supports door pair caching to merge hinge info from
+    Upper blocks into Lower block commands.
     """
-    
+
     def __init__(self):
         """Initialize converter with lookup tables and sub-converters."""
         self._build_color_lookup()
         self._init_converters()
+        self.door_hinge_cache = {}  # key: (x, y, z, layer) -> hinge_bit
     
     def _build_color_lookup(self):
         """Build color name lookup table."""
@@ -640,20 +683,62 @@ class GrabCraftToBedrockConverter:
     def _parse_direction(self, direction_str: str) -> Optional[str]:
         """Parse direction from GrabCraft format."""
         return BlockParser.DIRECTION_MAP.get(direction_str.lower().strip())
-    
-    def convert(self, grabcraft_name: str) -> Optional[BedrockBlock]:
+
+    def register_door_upper_block(self, x: int, y: int, z: int, layer: int, block_name: str):
+        """
+        Register hinge info from an Upper door block for later use by Lower block.
+
+        Args:
+            x, y, z, layer: Coordinates of the Upper door block
+            block_name: Upper door block name (e.g., "Oak Door (Upper, Hinge Right)")
+        """
+        # door_hinge_bit: false=left, true=right
+        # Note: logic is inverted from GrabCraft properties per user request
+        hinge_bit = False
+        
+        # Use the same logic as DoorConverter to parse properties
+        match = DoorConverter.PATTERN.match(block_name)
+        if match:
+            props = match.group(2).lower().strip()
+            if 'hinge' in props:
+                hinge_bit = 'left' in props
+        else:
+            # Fallback to simple string check
+            if 'hinge left' in block_name.lower():
+                hinge_bit = True
+
+        # Lower block is at same x, z, but y-1, layer-1
+        lower_key = (x, y - 1, z, layer - 1)
+        self.door_hinge_cache[lower_key] = hinge_bit
+
+    def clear_door_cache(self):
+        """Clear door hinge cache (useful when processing new CSV file)."""
+        self.door_hinge_cache.clear()
+
+    def convert(self, grabcraft_name: str, x: Optional[int] = None, y: Optional[int] = None,
+                z: Optional[int] = None, layer: Optional[int] = None) -> Optional[BedrockBlock]:
         """
         Convert a GrabCraft block name to Bedrock Edition format.
+
+        Args:
+            grabcraft_name: Block name from GrabCraft
+            x, y, z, layer: Optional coordinates for door pair lookup
+
+        For door blocks: if coordinates provided, will use cached hinge info from Upper blocks.
         """
         if not grabcraft_name or not grabcraft_name.strip():
             return None
-        
+
         name = grabcraft_name.strip()
+
+        # Store coordinates in converter for DoorConverter access
+        self._current_coords = (x, y, z, layer) if x is not None else None
+
         for converter in self.converters:
             result = converter.convert(name, self)
             if result is not None:
                 return result
-        
+
         return None
 # CONVENIENCE FUNCTIONS
 # =============================================================================
@@ -668,12 +753,14 @@ def get_converter() -> GrabCraftToBedrockConverter:
     return _converter
 
 
-def convert_grabcraft_to_bedrock(grabcraft_name: str) -> Optional[str]:
+def convert_grabcraft_to_bedrock(grabcraft_name: str, x: Optional[int] = None, y: Optional[int] = None,
+                                z: Optional[int] = None, layer: Optional[int] = None) -> Optional[str]:
     """
     Convert a GrabCraft block name to Bedrock Edition command string.
     
     Args:
         grabcraft_name: Block name from GrabCraft (e.g., "Oak Wood Stairs (North, Normal)")
+        x, y, z, layer: Optional coordinates for door pair lookup
         
     Returns:
         Bedrock block command string (e.g., 'minecraft:oak_stairs["weirdo_direction"=3,"upside_down_bit"=false]')
@@ -690,7 +777,7 @@ def convert_grabcraft_to_bedrock(grabcraft_name: str) -> Optional[str]:
         'minecraft:light_blue_wool'
     """
     converter = get_converter()
-    result = converter.convert(grabcraft_name)
+    result = converter.convert(grabcraft_name, x, y, z, layer)
     return result.to_command_string() if result else None
 
 

@@ -11,6 +11,7 @@ from collections import defaultdict
 
 # Import our modules
 from grabcraft_to_commands import extract_blocks_from_web, get_block_id
+from grabcraft_to_bedrock import get_converter
 from optimize_commands import read_commands, optimize_grid
 
 
@@ -87,8 +88,15 @@ def export_pipeline(url: str, output_csv: str, save_intermediate: bool = True):
     bedrock_commands = []
     bedrock_dict = {}
 
+    converter = get_converter()
+    converter.clear_door_cache()
+    # Register all door upper blocks first
     for b in original_blocks:
-        block_id = get_block_id(b['material'])
+        if 'door' in b['material'].lower() and 'upper' in b['material'].lower():
+            converter.register_door_upper_block(b['x'], b['y'], b['z'], b['layer'], b['material'])
+
+    for b in original_blocks:
+        block_id = get_block_id(b['material'], b['x'], b['y'], b['z'], b['layer'])
         if block_id:
             cmd = f'/setblock {b["x"]} {b["y"]} {b["z"]} {block_id}'
             bedrock_commands.append(cmd)

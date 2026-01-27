@@ -15,7 +15,7 @@ from urllib.request import urlopen, Request
 from dataclasses import dataclass
 from typing import List, Dict, Tuple, Optional
 
-from grabcraft_to_bedrock import convert_grabcraft_to_bedrock
+from grabcraft_to_bedrock import convert_grabcraft_to_bedrock, get_converter
 
 # ============================================================================
 # COMPASS ROTATION DETECTION
@@ -290,10 +290,11 @@ def extract_blocks_from_web(page_url: str) -> list[dict]:
 # COMMAND GENERATION FUNCTIONS
 # ============================================================================
 
-def get_block_id(material: str) -> str | None:
+def get_block_id(material: str, x: Optional[int] = None, y: Optional[int] = None,
+                 z: Optional[int] = None, layer: Optional[int] = None) -> str | None:
     if not material or not material.strip():
         return None
-    bedrock_id = convert_grabcraft_to_bedrock(material)
+    bedrock_id = convert_grabcraft_to_bedrock(material, x, y, z, layer)
     if bedrock_id:
         return bedrock_id
     else:
@@ -314,12 +315,20 @@ def is_attachable_block(material: str) -> bool:
 
 def generate_commands(blocks: list[dict]) -> list[str]:
     """Generate Minecraft /setblock commands for all blocks."""
+    converter = get_converter()
+    converter.clear_door_cache()
+
+    # Pass 1: Register all door upper blocks
+    for b in blocks:
+        if 'door' in b['material'].lower() and 'upper' in b['material'].lower():
+            converter.register_door_upper_block(b['x'], b['y'], b['z'], b['layer'], b['material'])
+
     commands = []
     attachable_commands = []
     skipped = 0
 
     for b in blocks:
-        block_id = get_block_id(b['material'])
+        block_id = get_block_id(b['material'], b['x'], b['y'], b['z'], b['layer'])
         if block_id is None or block_id.startswith('__SKIP__'):
             skipped += 1
             continue
