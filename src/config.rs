@@ -181,12 +181,6 @@ impl Config {
         Ok(config)
     }
 
-    pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Box<dyn std::error::Error>> {
-        let content = toml::to_string_pretty(self)?;
-        fs::write(path, content)?;
-        Ok(())
-    }
-
     pub fn offset(&self) -> Offset {
         Offset::new(
             self.coordinates.offset_x,

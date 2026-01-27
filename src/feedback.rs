@@ -33,11 +33,6 @@ pub struct FeedbackDetector {
 }
 
 impl FeedbackDetector {
-    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let config = ScreenRegionsConfig::default();
-        Self::with_config(&config)
-    }
-
     pub fn with_config(config: &ScreenRegionsConfig) -> Result<Self, Box<dyn std::error::Error>> {
         let display = Display::primary()?;
         let width = display.width();

@@ -24,6 +24,7 @@ enum ExecutionState {
     Running,
     Completed,
     Failed,
+    Stopped,
 }
 
 pub struct McCommanderApp {
@@ -56,6 +57,7 @@ pub struct McCommanderApp {
 
     logs: Arc<Mutex<Vec<String>>>,
     execution_state: Arc<Mutex<ExecutionState>>,
+    stop_flag: Arc<Mutex<bool>>,
     scroll_to_bottom: bool,
 }
 
@@ -97,6 +99,7 @@ impl Default for McCommanderApp {
             screen_regions: config.screen_regions,
             logs: Arc::new(Mutex::new(Vec::new())),
             execution_state: Arc::new(Mutex::new(ExecutionState::Idle)),
+            stop_flag: Arc::new(Mutex::new(false)),
             scroll_to_bottom: false,
         }
     }
@@ -193,6 +196,7 @@ impl McCommanderApp {
         drop(state);
 
         *self.execution_state.lock().unwrap() = ExecutionState::Running;
+        *self.stop_flag.lock().unwrap() = false;
         self.clear_logs();
         self.add_log("Starting execution...".to_string());
 
@@ -217,11 +221,12 @@ impl McCommanderApp {
         let mode = self.execution_mode.clone();
         let logs = Arc::clone(&self.logs);
         let state = Arc::clone(&self.execution_state);
+        let stop_flag = Arc::clone(&self.stop_flag);
 
         thread::spawn(move || {
             let result = match mode {
-                ExecutionMode::FromFile => execute_from_file(&config, &logs),
-                ExecutionMode::Staircase => execute_staircase(&config, &logs),
+                ExecutionMode::FromFile => execute_from_file(&config, &logs, &stop_flag),
+                ExecutionMode::Staircase => execute_staircase(&config, &logs, &stop_flag),
                 ExecutionMode::DetectionAreas => {
                     logs.lock()
                         .unwrap()
@@ -236,10 +241,17 @@ impl McCommanderApp {
             let mut execution_state = state.lock().unwrap();
             match result {
                 Ok(_) => {
-                    logs.lock()
-                        .unwrap()
-                        .push("Execution completed successfully!".to_string());
-                    *execution_state = ExecutionState::Completed;
+                    if *stop_flag.lock().unwrap() {
+                        logs.lock()
+                            .unwrap()
+                            .push("Execution stopped by user.".to_string());
+                        *execution_state = ExecutionState::Stopped;
+                    } else {
+                        logs.lock()
+                            .unwrap()
+                            .push("Execution completed successfully!".to_string());
+                        *execution_state = ExecutionState::Completed;
+                    }
                 }
                 Err(e) => {
                     logs.lock()
@@ -249,6 +261,11 @@ impl McCommanderApp {
                 }
             }
         });
+    }
+
+    fn stop_execution(&mut self) {
+        *self.stop_flag.lock().unwrap() = true;
+        self.add_log("Stop requested, waiting for current command to finish...".to_string());
     }
 
     fn load_from_url(&mut self) {
@@ -568,6 +585,11 @@ impl eframe::App for McCommanderApp {
                     self.start_execution();
                 }
 
+                let stop_button = ui.add_enabled(is_running, egui::Button::new("Stop"));
+                if stop_button.clicked() {
+                    self.stop_execution();
+                }
+
                 if ui.button("Show Detection Areas").clicked() {
                     self.show_detection_areas();
                 }
@@ -583,6 +605,9 @@ impl eframe::App for McCommanderApp {
                     }
                     ExecutionState::Failed => {
                         ui.colored_label(egui::Color32::RED, "✗ Failed");
+                    }
+                    ExecutionState::Stopped => {
+                        ui.colored_label(egui::Color32::YELLOW, "⏹ Stopped");
                     }
                 }
             });
@@ -608,7 +633,11 @@ impl eframe::App for McCommanderApp {
     }
 }
 
-fn execute_from_file(config: &Config, logs: &Arc<Mutex<Vec<String>>>) -> Result<()> {
+fn execute_from_file(
+    config: &Config,
+    logs: &Arc<Mutex<Vec<String>>>,
+    stop_flag: &Arc<Mutex<bool>>,
+) -> Result<()> {
     logs.lock().unwrap().push(format!(
         "Loading commands from URL: {}",
         config.execution.url
@@ -625,21 +654,26 @@ fn execute_from_file(config: &Config, logs: &Arc<Mutex<Vec<String>>>) -> Result<
         .push(format!("Reading commands from: {}", file_path.display()));
 
     let commands = load_from_file(&file_path.to_string_lossy())?;
-    execute_commands(config, commands, logs)
+    execute_commands(config, commands, logs, stop_flag)
 }
 
-fn execute_staircase(config: &Config, logs: &Arc<Mutex<Vec<String>>>) -> Result<()> {
+fn execute_staircase(
+    config: &Config,
+    logs: &Arc<Mutex<Vec<String>>>,
+    stop_flag: &Arc<Mutex<bool>>,
+) -> Result<()> {
     logs.lock()
         .unwrap()
         .push("Generating staircase commands...".to_string());
     let commands = staircase::generate_commands();
-    execute_commands(config, commands, logs)
+    execute_commands(config, commands, logs, stop_flag)
 }
 
 fn execute_commands(
     config: &Config,
     commands: Vec<String>,
     logs: &Arc<Mutex<Vec<String>>>,
+    stop_flag: &Arc<Mutex<bool>>,
 ) -> Result<()> {
     let offset = config.offset();
 
@@ -688,6 +722,7 @@ fn execute_commands(
         offset,
         config.execution.skip,
         logs,
+        stop_flag,
     )?;
     Ok(())
 }
@@ -718,6 +753,7 @@ fn execute_build_phase(
     offset: Offset,
     skip_count: usize,
     logs: &Arc<Mutex<Vec<String>>>,
+    stop_flag: &Arc<Mutex<bool>>,
 ) -> Result<()> {
     let total = skip_count + commands.len();
 
@@ -729,6 +765,13 @@ fn execute_build_phase(
     }
 
     for (i, command) in commands.iter().enumerate() {
+        if *stop_flag.lock().unwrap() {
+            logs.lock()
+                .unwrap()
+                .push(format!("Stopped at command {}/{}", skip_count + i, total));
+            break;
+        }
+
         let cmd = apply_offset(command, offset);
         let stats = executor.execute(&cmd)?;
 

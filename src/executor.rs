@@ -36,11 +36,6 @@ pub struct CommandExecutor {
 }
 
 impl CommandExecutor {
-    pub fn new() -> Result<Self> {
-        let config = ScreenRegionsConfig::default();
-        Self::with_config(&config)
-    }
-
     pub fn with_config(config: &ScreenRegionsConfig) -> Result<Self> {
         let enigo = Enigo::new(&Settings::default())?;
         let clipboard = Clipboard::new()?;
