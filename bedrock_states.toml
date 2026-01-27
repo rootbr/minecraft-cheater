@@ -75,6 +75,32 @@ south = 3
 west = 4
 east = 5
 
+# Extended direction mapping for wall signs (8-way to 6-way facing_direction)
+# facing_direction values: 0=down, 1=up, 2=north, 3=south, 4=west, 5=east
+[wall_sign_direction]
+down = 0
+up = 1
+north = 2
+north-northeast = 2
+north-northwest = 2
+nnw = 2
+nne = 2
+south = 3
+south-southeast = 3
+south-southwest = 3
+ssw = 3
+sse = 3
+west = 4
+west-northwest = 4
+west-southwest = 4
+wnw = 4
+wsw = 4
+east = 5
+east-northeast = 5
+east-southeast = 5
+ene = 5
+ese = 5
+
 # =============================================================================
 # COLORS
 # =============================================================================

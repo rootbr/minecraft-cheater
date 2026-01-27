@@ -41,6 +41,7 @@ VINE_BITS = _BEDROCK_STATES["vine_bits"]
 TORCH_FACING_DIRECTION = _BEDROCK_STATES["torch_facing_direction"]
 PILLAR_AXIS = _BEDROCK_STATES["pillar_axis"]
 BUTTON_FACING = _BEDROCK_STATES["button_facing"]
+WALL_SIGN_DIRECTION = _BEDROCK_STATES["wall_sign_direction"]
 
 # Block name mappings
 JE_TO_BE_NAMES = _BEDROCK_STATES["je_to_be_names"]
@@ -480,6 +481,32 @@ class SignConverter(BaseConverter):
 
         return BedrockBlock(block_id=block_id, states=states)
 
+class WallSignFixConverter(BaseConverter):
+    """Fix GrabCraft names that turn into wall_wall_sign or wall-mounted_wall_sign."""
+    PATTERN = re.compile(
+        r'^(?:Wall(?:-?mounted)?)\s+(?:Wall\s+)?Sign(?:\s+Block)?\s*[,\s]*(.*)$',
+        re.IGNORECASE
+    )
+
+    def convert(self, name: str, parser: 'GrabCraftToBedrockConverter') -> Optional[BedrockBlock]:
+        match = self.PATTERN.match(name)
+        if not match:
+            return None
+
+        # Extract direction from captured group
+        direction_str = match.group(1).strip().lower() if match.group(1) else ""
+
+        # Remove parentheses if present
+        direction_str = direction_str.replace('(', '').replace(')', '').strip()
+
+        # Parse direction using extended map, fallback to HORIZONTAL_FACING
+        facing = WALL_SIGN_DIRECTION.get(direction_str)
+        if facing is None:
+            facing = HORIZONTAL_FACING.get(direction_str, 2)  # Default to north
+
+        # Bedrock Edition doesn't have oak_wall_sign, use birch as default
+        return BedrockBlock(block_id='minecraft:birch_wall_sign', states={'facing_direction': facing})
+
 class SimpleBlockConverter(BaseConverter):
     """Fallback converter for simple blocks with no states."""
     def convert(self, name: str, parser: 'GrabCraftToBedrockConverter') -> Optional[BedrockBlock]:
@@ -539,6 +566,7 @@ class GrabCraftToBedrockConverter:
             RedstoneWireConverter(),
             WaterConverter(),
             FlowerConverter(),
+            WallSignFixConverter(),
             SignConverter(),
             # Colored blocks
             ColoredBlockConverter(re.compile(r'^(.+?)\s+Wool$', re.IGNORECASE), "wool"),
