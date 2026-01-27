@@ -708,7 +708,7 @@ fn execute_commands(
             logs.lock()
                 .unwrap()
                 .push("Clearing build area...".to_string());
-            execute_clear(&mut executor, bbox, offset)?;
+            execute_clear(&mut executor, bbox, offset, Some(logs), Some(stop_flag))?;
             logs.lock()
                 .unwrap()
                 .push("Preparing for build phase...".to_string());
@@ -773,7 +773,7 @@ fn execute_build_phase(
         }
 
         let cmd = apply_offset(command, offset);
-        let stats = executor.execute(&cmd)?;
+        let stats = executor.execute(&cmd, Some(stop_flag))?;
 
         let log_msg = if let Some(s) = stats {
             format!(

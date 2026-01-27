@@ -1,3 +1,4 @@
+use std::sync::{Arc, Mutex};
 use crate::commands::{apply_offset, BoundingBox};
 use crate::config::{Offset, CHUNK_SIZE};
 use crate::executor::CommandExecutor;
@@ -40,29 +41,66 @@ pub fn execute_clear(
     executor: &mut CommandExecutor,
     bbox: BoundingBox,
     offset: Offset,
+    logs: Option<&Arc<Mutex<Vec<String>>>>,
+    stop_flag: Option<&Arc<Mutex<bool>>>,
 ) -> Result<()> {
     let clear_commands = generate_clear_commands(bbox);
     let size = bbox.size();
 
-    println!("\n=== Очистка области ===");
-    println!(
-        "Размер: {}x{}x{} ({} блоков), {} команд",
+    let msg = format!(
+        "=== Clearing area: {}x{}x{} ({} blocks), {} commands ===",
         size.0, size.1, size.2, bbox.total_blocks(), clear_commands.len()
     );
+    
+    println!("{}", msg);
+    if let Some(l) = logs {
+        l.lock().unwrap().push(msg);
+    }
 
     for (i, command) in clear_commands.iter().enumerate() {
+        if let Some(stop) = stop_flag {
+            if *stop.lock().unwrap() {
+                let stop_msg = format!("Clearing stopped at {}/{}", i, clear_commands.len());
+                println!("{}", stop_msg);
+                if let Some(l) = logs {
+                    l.lock().unwrap().push(stop_msg);
+                }
+                break;
+            }
+        }
+
         let cmd = apply_offset(command, offset);
-        let stats = executor.execute(&cmd)?;
-        print!("[clear {}/{}] {}", i + 1, clear_commands.len(), cmd);
+        let stats = executor.execute(&cmd, stop_flag)?;
+        
         if let Some(s) = stats {
-            println!(" ({}ms {}/{}/{} iterations)", 
-                s.total_time.as_millis(), 
-                s.iterations[0], s.iterations[1], s.iterations[2]);
+            let log_line = format!(
+                "[clear {}/{}] {} ({}ms {}/{}/{} iterations)",
+                i + 1,
+                clear_commands.len(),
+                cmd,
+                s.total_time.as_millis(),
+                s.iterations[0],
+                s.iterations[1],
+                s.iterations[2]
+            );
+            println!("{}", log_line);
+            if let Some(l) = logs {
+                l.lock().unwrap().push(log_line);
+            }
         } else {
-            println!();
+            let log_line = format!("[clear {}/{}] {} (Skipped)", i + 1, clear_commands.len(), cmd);
+            println!("{}", log_line);
+            if let Some(l) = logs {
+                l.lock().unwrap().push(log_line);
+            }
         }
     }
-    println!("Очистка завершена!\n");
+    
+    let done_msg = "Clearing phase finished!".to_string();
+    println!("{}", done_msg);
+    if let Some(l) = logs {
+        l.lock().unwrap().push(done_msg);
+    }
 
     Ok(())
 }

@@ -111,7 +111,7 @@ fn perform_clear_phase(
 ) -> Result<()> {
     if config.execution.skip == 0 && config.execution.material.is_none() {
         if let Some(bbox) = bbox {
-            execute_clear(executor, bbox, offset)?;
+            execute_clear(executor, bbox, offset, None, None)?;
         }
     }
     Ok(())
@@ -155,7 +155,7 @@ fn execute_build_phase(
     let total = skip_count + commands.len();
     for (i, command) in commands.iter().enumerate() {
         let cmd = apply_offset(command, offset);
-        let stats = executor.execute(&cmd)?;
+        let stats = executor.execute(&cmd, None)?;
 
         print!("[{}/{}] {}", skip_count + i + 1, total, cmd);
         if let Some(s) = stats {

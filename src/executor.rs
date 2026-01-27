@@ -6,6 +6,7 @@ use enigo::{
     Direction::{Click, Press, Release},
     Enigo, Key, Keyboard, Mouse, Settings,
 };
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -48,11 +49,21 @@ impl CommandExecutor {
         })
     }
 
-    pub fn execute(&mut self, command: &str) -> Result<Option<CommandStats>> {
+    pub fn execute(
+        &mut self,
+        command: &str,
+        stop_flag: Option<&Arc<Mutex<bool>>>,
+    ) -> Result<Option<CommandStats>> {
         const MAX_RETRIES: usize = 3;
 
         for attempt in 1..=MAX_RETRIES {
-            match self.execute_once(command) {
+            if let Some(stop) = stop_flag {
+                if *stop.lock().unwrap() {
+                    return Ok(None);
+                }
+            }
+
+            match self.execute_once(command, stop_flag) {
                 Ok(stats) => return Ok(Some(stats)),
                 Err(e) => {
                     if attempt < MAX_RETRIES {
@@ -70,11 +81,21 @@ impl CommandExecutor {
         Ok(None)
     }
 
-    fn execute_once(&mut self, command: &str) -> Result<CommandStats> {
+    fn execute_once(
+        &mut self,
+        command: &str,
+        stop_flag: Option<&Arc<Mutex<bool>>>,
+    ) -> Result<CommandStats> {
         self.copy_to_clipboard(command)?;
         let start = Instant::now();
 
         loop {
+            if let Some(stop) = stop_flag {
+                if *stop.lock().unwrap() {
+                    return Err("Execution stopped by user".into());
+                }
+            }
+
             let s1 = match self.open_chat() {
                 Ok(s) => s,
                 Err(_) => {
@@ -82,6 +103,13 @@ impl CommandExecutor {
                     continue;
                 }
             };
+            
+            if let Some(stop) = stop_flag {
+                if *stop.lock().unwrap() {
+                    return Err("Execution stopped by user".into());
+                }
+            }
+
             let s2 = match self.paste_command() {
                 Ok(s) => s,
                 Err(_) => {
@@ -89,6 +117,13 @@ impl CommandExecutor {
                     continue;
                 }
             };
+
+            if let Some(stop) = stop_flag {
+                if *stop.lock().unwrap() {
+                    return Err("Execution stopped by user".into());
+                }
+            }
+
             let s3 = match self.send_command() {
                 Ok(s) => s,
                 Err(_) => {
