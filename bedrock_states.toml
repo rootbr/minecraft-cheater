@@ -42,6 +42,12 @@ south = 1
 west = 2
 north = 3
 
+[trapdoor_direction]
+east = 1
+south = 2
+west = 3
+north = 0
+
 # https://minecraft.wiki/w/Vines
 [vine_bits]
 south = 1

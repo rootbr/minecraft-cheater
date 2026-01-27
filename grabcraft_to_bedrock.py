@@ -37,6 +37,7 @@ BED_DIRECTION = _BEDROCK_STATES["bed_direction_map"]
 SIXWAY_FACING = _BEDROCK_STATES["sixway_facing"]
 HORIZONTAL_FACING = _BEDROCK_STATES["horizontal_facing"]
 DOOR_DIRECTION = _BEDROCK_STATES["door_direction"]
+TRAPDOOR_DIRECTION  = _BEDROCK_STATES["trapdoor_direction"]
 VINE_BITS = _BEDROCK_STATES["vine_bits"]
 TORCH_FACING_DIRECTION = _BEDROCK_STATES["torch_facing_direction"]
 PILLAR_AXIS = _BEDROCK_STATES["pillar_axis"]
@@ -216,18 +217,31 @@ class DoorConverter(BaseConverter):
 
 class TrapdoorConverter(BaseConverter):
     PATTERN = re.compile(r'^(.+?)\s+Trapdoor\s*\(([^)]*)\)$', re.IGNORECASE)
+
     def convert(self, name: str, parser: 'GrabCraftToBedrockConverter') -> Optional[BedrockBlock]:
         match = self.PATTERN.match(name)
-        if not match: return None
+        if not match:
+            return None
+
         material, props = match.group(1).lower().strip(), match.group(2).lower().strip()
         block_name = BlockParser.get_material_block(material, TRAPDOOR_MATERIALS, "_trapdoor")
-        direction = BlockParser.parse_direction_int(props, DOOR_DIRECTION, 0)
+
+        # Parse direction: "west from block" → "west" → 2
+        # Uses substring matching: checks if "west" is in "west from block, open, bottom"
+        direction = BlockParser.parse_direction_int(props, TRAPDOOR_DIRECTION, 0)
+
+        # Parse open state
+        is_open = 'open' in props
+
+        # Parse upside_down_bit: "top" or "top half" → True, "bottom" → False
+        is_upside_down = 'top' in props
+
         return BedrockBlock(
             block_id=f'minecraft:{block_name}',
             states={
                 'direction': direction,
-                'open_bit': 'open' in props,
-                'upside_down_bit': 'top' in props or 'upper' in props,
+                'open_bit': is_open,
+                'upside_down_bit': is_upside_down,
             }
         )
 
