@@ -1,6 +1,7 @@
 [execution]
 url = "https://www.grabcraft.com/minecraft/the-burning-bear-inn/medieval-houses#blueprints"
 skip = 0
+material = "sign"
 
 [coordinates]
 offset_x = -70

@@ -90,16 +90,16 @@ south-southeast = 3
 south-southwest = 3
 ssw = 3
 sse = 3
-west = 4
-west-northwest = 4
-west-southwest = 4
-wnw = 4
-wsw = 4
-east = 5
-east-northeast = 5
-east-southeast = 5
-ene = 5
-ese = 5
+west = 5
+west-northwest = 5
+west-southwest = 5
+wnw = 5
+wsw = 5
+east = 4
+east-northeast = 4
+east-southeast = 4
+ene = 4
+ese = 4
 
 # =============================================================================
 # COLORS

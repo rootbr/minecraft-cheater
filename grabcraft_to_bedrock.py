@@ -191,7 +191,7 @@ class SlabConverter(BaseConverter):
         )
 
 class DoorConverter(BaseConverter):
-    PATTERN = re.compile(r'^(.+?)\s+Door\s*\(([^)]*)\)$', re.IGNORECASE)
+    PATTERN = re.compile(r'^(.+?)\s+Door\s*\(([^)]*)\)?$', re.IGNORECASE)
     def convert(self, name: str, parser: 'GrabCraftToBedrockConverter') -> Optional[BedrockBlock]:
         match = self.PATTERN.match(name)
         if not match: return None
@@ -528,7 +528,7 @@ class FireConverter(BaseConverter):
 
 class PressurePlateConverter(BaseConverter):
     """Converter for pressure plates."""
-    PATTERN = re.compile(r'^(.+?)\s+Pressure\s+Plate$', re.IGNORECASE)
+    PATTERN = re.compile(r'^(.+?)\s+Pressure\s+Plate\s*(?:\((?:Active|Unactive|Inactive)\))?$', re.IGNORECASE)
 
     def convert(self, name: str, parser: 'GrabCraftToBedrockConverter') -> Optional[BedrockBlock]:
         match = self.PATTERN.match(name)
