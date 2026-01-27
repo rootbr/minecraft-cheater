@@ -111,7 +111,7 @@ fn perform_clear_phase(
 ) -> Result<()> {
     if config.execution.skip == 0 && config.execution.material.is_none() {
         if let Some(bbox) = bbox {
-            execute_clear(executor, bbox, offset, None, None)?;
+            execute_clear(executor, bbox, offset, None, None, None)?;
         }
     }
     Ok(())

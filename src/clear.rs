@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use eframe::egui;
 use crate::commands::{apply_offset, BoundingBox};
 use crate::config::{Offset, CHUNK_SIZE};
 use crate::executor::CommandExecutor;
@@ -43,6 +44,7 @@ pub fn execute_clear(
     offset: Offset,
     logs: Option<&Arc<Mutex<Vec<String>>>>,
     stop_flag: Option<&Arc<Mutex<bool>>>,
+    ctx: Option<&egui::Context>,
 ) -> Result<()> {
     let clear_commands = generate_clear_commands(bbox);
     let size = bbox.size();
@@ -55,6 +57,9 @@ pub fn execute_clear(
     println!("{}", msg);
     if let Some(l) = logs {
         l.lock().unwrap().push(msg);
+        if let Some(c) = ctx {
+            c.request_repaint();
+        }
     }
 
     for (i, command) in clear_commands.iter().enumerate() {
@@ -64,6 +69,9 @@ pub fn execute_clear(
                 println!("{}", stop_msg);
                 if let Some(l) = logs {
                     l.lock().unwrap().push(stop_msg);
+                    if let Some(c) = ctx {
+                        c.request_repaint();
+                    }
                 }
                 break;
             }
@@ -86,12 +94,18 @@ pub fn execute_clear(
             println!("{}", log_line);
             if let Some(l) = logs {
                 l.lock().unwrap().push(log_line);
+                if let Some(c) = ctx {
+                    c.request_repaint();
+                }
             }
         } else {
             let log_line = format!("[clear {}/{}] {} (Skipped)", i + 1, clear_commands.len(), cmd);
             println!("{}", log_line);
             if let Some(l) = logs {
                 l.lock().unwrap().push(log_line);
+                if let Some(c) = ctx {
+                    c.request_repaint();
+                }
             }
         }
     }
@@ -100,6 +114,9 @@ pub fn execute_clear(
     println!("{}", done_msg);
     if let Some(l) = logs {
         l.lock().unwrap().push(done_msg);
+        if let Some(c) = ctx {
+            c.request_repaint();
+        }
     }
 
     Ok(())

@@ -59,6 +59,7 @@ pub struct McCommanderApp {
     execution_state: Arc<Mutex<ExecutionState>>,
     stop_flag: Arc<Mutex<bool>>,
     scroll_to_bottom: bool,
+    ctx: Option<egui::Context>,
 }
 
 impl Default for McCommanderApp {
@@ -101,6 +102,7 @@ impl Default for McCommanderApp {
             execution_state: Arc::new(Mutex::new(ExecutionState::Idle)),
             stop_flag: Arc::new(Mutex::new(false)),
             scroll_to_bottom: false,
+            ctx: None,
         }
     }
 }
@@ -116,14 +118,19 @@ impl Default for Config {
 }
 
 impl McCommanderApp {
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        Self::default()
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        let mut app = Self::default();
+        app.ctx = Some(cc.egui_ctx.clone());
+        app
     }
 
     fn add_log(&mut self, message: String) {
         if let Ok(mut logs) = self.logs.lock() {
             logs.push(message);
             self.scroll_to_bottom = true;
+            if let Some(ctx) = &self.ctx {
+                ctx.request_repaint();
+            }
         }
     }
 
@@ -223,17 +230,24 @@ impl McCommanderApp {
         let state = Arc::clone(&self.execution_state);
         let stop_flag = Arc::clone(&self.stop_flag);
 
+        let ctx = self.ctx.clone();
         thread::spawn(move || {
             let result = match mode {
-                ExecutionMode::FromFile => execute_from_file(&config, &logs, &stop_flag),
-                ExecutionMode::Staircase => execute_staircase(&config, &logs, &stop_flag),
+                ExecutionMode::FromFile => execute_from_file(&config, &logs, &stop_flag, ctx.as_ref()),
+                ExecutionMode::Staircase => execute_staircase(&config, &logs, &stop_flag, ctx.as_ref()),
                 ExecutionMode::DetectionAreas => {
                     logs.lock()
                         .unwrap()
                         .push("Detection Areas mode does not execute commands.".to_string());
+                    if let Some(c) = ctx.as_ref() {
+                        c.request_repaint();
+                    }
                     logs.lock()
                         .unwrap()
                         .push("Use 'Show Detection Areas' button to preview regions.".to_string());
+                    if let Some(c) = ctx.as_ref() {
+                        c.request_repaint();
+                    }
                     Ok(())
                 }
             };
@@ -259,6 +273,9 @@ impl McCommanderApp {
                         .push(format!("Execution failed: {}", e));
                     *execution_state = ExecutionState::Failed;
                 }
+            }
+            if let Some(c) = ctx.as_ref() {
+                c.request_repaint();
             }
         });
     }
@@ -617,18 +634,24 @@ impl eframe::App for McCommanderApp {
             ui.label("Logs:");
             let text_height = ui.available_height();
 
-            egui::ScrollArea::vertical()
-                .id_salt("logs_scroll")
-                .max_height(text_height)
-                .stick_to_bottom(true)
-                .auto_shrink([false, false])
-                .show(ui, |ui| {
-                    if let Ok(logs) = self.logs.lock() {
-                        for log in logs.iter() {
-                            ui.label(log);
-                        }
-                    }
-                });
+            if let Ok(logs) = self.logs.lock() {
+                let total_rows = logs.len();
+                egui::ScrollArea::vertical()
+                    .id_salt("logs_scroll")
+                    .max_height(text_height)
+                    .stick_to_bottom(true)
+                    .auto_shrink([false, false])
+                    .show_rows(
+                        ui,
+                        ui.text_style_height(&egui::TextStyle::Body),
+                        total_rows,
+                        |ui, row_range| {
+                            for i in row_range {
+                                ui.label(&logs[i]);
+                            }
+                        },
+                    );
+            }
         });
     }
 }
@@ -637,11 +660,15 @@ fn execute_from_file(
     config: &Config,
     logs: &Arc<Mutex<Vec<String>>>,
     stop_flag: &Arc<Mutex<bool>>,
+    ctx: Option<&egui::Context>,
 ) -> Result<()> {
     logs.lock().unwrap().push(format!(
         "Loading commands from URL: {}",
         config.execution.url
     ));
+    if let Some(c) = ctx {
+        c.request_repaint();
+    }
 
     let file_path = url_handler::ensure_commands_exist_with_logs(
         &config.execution.url,
@@ -652,21 +679,28 @@ fn execute_from_file(
     logs.lock()
         .unwrap()
         .push(format!("Reading commands from: {}", file_path.display()));
+    if let Some(c) = ctx {
+        c.request_repaint();
+    }
 
     let commands = load_from_file(&file_path.to_string_lossy())?;
-    execute_commands(config, commands, logs, stop_flag)
+    execute_commands(config, commands, logs, stop_flag, ctx)
 }
 
 fn execute_staircase(
     config: &Config,
     logs: &Arc<Mutex<Vec<String>>>,
     stop_flag: &Arc<Mutex<bool>>,
+    ctx: Option<&egui::Context>,
 ) -> Result<()> {
     logs.lock()
         .unwrap()
         .push("Generating staircase commands...".to_string());
+    if let Some(c) = ctx {
+        c.request_repaint();
+    }
     let commands = staircase::generate_commands();
-    execute_commands(config, commands, logs, stop_flag)
+    execute_commands(config, commands, logs, stop_flag, ctx)
 }
 
 fn execute_commands(
@@ -674,6 +708,7 @@ fn execute_commands(
     commands: Vec<String>,
     logs: &Arc<Mutex<Vec<String>>>,
     stop_flag: &Arc<Mutex<bool>>,
+    ctx: Option<&egui::Context>,
 ) -> Result<()> {
     let offset = config.offset();
 
@@ -690,6 +725,9 @@ fn execute_commands(
         logs.lock()
             .unwrap()
             .push("No commands to execute after filtering".to_string());
+        if let Some(c) = ctx {
+            c.request_repaint();
+        }
         return Ok(());
     }
 
@@ -699,6 +737,9 @@ fn execute_commands(
     logs.lock()
         .unwrap()
         .push("Activating Minecraft window...".to_string());
+    if let Some(c) = ctx {
+        c.request_repaint();
+    }
 
     let mut executor = CommandExecutor::with_config(&config.screen_regions)?;
     executor.activate_minecraft_window()?;
@@ -708,10 +749,16 @@ fn execute_commands(
             logs.lock()
                 .unwrap()
                 .push("Clearing build area...".to_string());
-            execute_clear(&mut executor, bbox, offset, Some(logs), Some(stop_flag))?;
+            if let Some(c) = ctx {
+                c.request_repaint();
+            }
+            execute_clear(&mut executor, bbox, offset, Some(logs), Some(stop_flag), ctx)?;
             logs.lock()
                 .unwrap()
                 .push("Preparing for build phase...".to_string());
+            if let Some(c) = ctx {
+                c.request_repaint();
+            }
             std::thread::sleep(std::time::Duration::from_millis(500));
         }
     }
@@ -723,6 +770,7 @@ fn execute_commands(
         config.execution.skip,
         logs,
         stop_flag,
+        ctx,
     )?;
     Ok(())
 }
@@ -754,6 +802,7 @@ fn execute_build_phase(
     skip_count: usize,
     logs: &Arc<Mutex<Vec<String>>>,
     stop_flag: &Arc<Mutex<bool>>,
+    ctx: Option<&egui::Context>,
 ) -> Result<()> {
     let total = skip_count + commands.len();
 
@@ -761,6 +810,9 @@ fn execute_build_phase(
         logs.lock()
             .unwrap()
             .push("Waiting for system to stabilize...".to_string());
+        if let Some(c) = ctx {
+            c.request_repaint();
+        }
         std::thread::sleep(std::time::Duration::from_millis(500));
     }
 
@@ -769,6 +821,9 @@ fn execute_build_phase(
             logs.lock()
                 .unwrap()
                 .push(format!("Stopped at command {}/{}", skip_count + i, total));
+            if let Some(c) = ctx {
+                c.request_repaint();
+            }
             break;
         }
 
@@ -791,6 +846,9 @@ fn execute_build_phase(
         };
 
         logs.lock().unwrap().push(log_msg);
+        if let Some(c) = ctx {
+            c.request_repaint();
+        }
     }
     Ok(())
 }
