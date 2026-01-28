@@ -4,6 +4,8 @@ use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
+use crate::config::StairDirection;
+
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 pub fn extract_path_from_url(url: &str) -> Option<String> {
@@ -28,13 +30,14 @@ pub fn get_commands_file_path(url: &str, optimized: bool) -> Result<PathBuf> {
 }
 
 pub fn ensure_commands_exist(url: &str) -> Result<PathBuf> {
-    ensure_commands_exist_with_logs(url, None, false)
+    ensure_commands_exist_with_options(url, None, false, &StairDirection::Auto)
 }
 
-pub fn ensure_commands_exist_with_logs(
+pub fn ensure_commands_exist_with_options(
     url: &str,
     logs: Option<Arc<Mutex<Vec<String>>>>,
     force_regenerate: bool,
+    stair_direction: &StairDirection,
 ) -> Result<PathBuf> {
     let optimized_path = get_commands_file_path(url, true)?;
     let base_path = get_commands_file_path(url, false)?;
@@ -67,7 +70,7 @@ pub fn ensure_commands_exist_with_logs(
         log_message(&logs, String::new());
     }
 
-    generate_commands_from_url(url, logs)?;
+    generate_commands_from_url(url, logs, stair_direction)?;
 
     if optimized_path.exists() {
         Ok(optimized_path)
@@ -133,7 +136,11 @@ fn run_python_with_output(
     Ok(())
 }
 
-fn generate_commands_from_url(url: &str, logs: Option<Arc<Mutex<Vec<String>>>>) -> Result<()> {
+fn generate_commands_from_url(
+    url: &str,
+    logs: Option<Arc<Mutex<Vec<String>>>>,
+    stair_direction: &StairDirection,
+) -> Result<()> {
     let path = extract_path_from_url(url).ok_or("Invalid GrabCraft URL format")?;
 
     let dir_path = PathBuf::from("grabcraft").join(&path);
@@ -146,12 +153,20 @@ fn generate_commands_from_url(url: &str, logs: Option<Arc<Mutex<Vec<String>>>>) 
     log_message(&logs, format!("Output directory: {}", dir_path.display()));
     log_message(&logs, String::new());
 
+    let stair_arg = match stair_direction {
+        StairDirection::Auto => "auto",
+        StairDirection::Normal => "normal",
+        StairDirection::Invert => "invert",
+    };
+
     run_python_with_output(
         "grabcraft_to_commands.py",
         vec![
             url.to_string(),
             "-o".to_string(),
             base_output.to_string_lossy().to_string(),
+            "--stair-direction".to_string(),
+            stair_arg.to_string(),
         ],
         &logs,
     )?;

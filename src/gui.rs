@@ -4,7 +4,7 @@ use std::thread;
 
 use crate::clear::execute_clear;
 use crate::commands::{apply_offset, find_bounding_box, load_from_file};
-use crate::config::{Config, CoordinatesConfig, ExecutionConfig, Offset, ScreenRegionsConfig};
+use crate::config::{Config, CoordinatesConfig, ExecutionConfig, Offset, ScreenRegionsConfig, StairDirection};
 use crate::executor::CommandExecutor;
 use crate::staircase;
 use crate::url_handler;
@@ -32,6 +32,7 @@ pub struct McCommanderApp {
     execution_url: String,
     skip_commands: String,
     material_filter: String,
+    stair_direction: StairDirection,
 
     offset_x: String,
     offset_y: String,
@@ -78,6 +79,7 @@ impl Default for McCommanderApp {
             execution_url: config.execution.url,
             skip_commands: config.execution.skip.to_string(),
             material_filter: config.execution.material.unwrap_or_default(),
+            stair_direction: config.execution.stair_direction,
             offset_x: config.coordinates.offset_x.to_string(),
             offset_y: config.coordinates.offset_y.to_string(),
             offset_z: config.coordinates.offset_z.to_string(),
@@ -183,6 +185,7 @@ impl McCommanderApp {
                 } else {
                     Some(self.material_filter.clone())
                 },
+                stair_direction: self.stair_direction.clone(),
             },
             coordinates: CoordinatesConfig {
                 offset_x: self.offset_x.parse().unwrap_or(0),
@@ -216,6 +219,7 @@ impl McCommanderApp {
                 } else {
                     Some(self.material_filter.clone())
                 },
+                stair_direction: self.stair_direction.clone(),
             },
             coordinates: CoordinatesConfig {
                 offset_x: self.offset_x.parse().unwrap_or(0),
@@ -296,10 +300,15 @@ impl McCommanderApp {
 
         let url = self.execution_url.clone();
         let logs = Arc::clone(&self.logs);
+        let stair_direction = self.stair_direction.clone();
 
         thread::spawn(move || {
-            match url_handler::ensure_commands_exist_with_logs(&url, Some(Arc::clone(&logs)), true)
-            {
+            match url_handler::ensure_commands_exist_with_options(
+                &url,
+                Some(Arc::clone(&logs)),
+                true,
+                &stair_direction,
+            ) {
                 Ok(path) => {
                     logs.lock().unwrap().push(String::new());
                     logs.lock()
@@ -414,6 +423,38 @@ impl eframe::App for McCommanderApp {
                                         .desired_width(100.0),
                                 )
                                 .changed();
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label("Stair direction:");
+                            egui::ComboBox::from_id_salt("stair_direction")
+                                .selected_text(match self.stair_direction {
+                                    StairDirection::Auto => "Auto",
+                                    StairDirection::Normal => "Normal",
+                                    StairDirection::Invert => "Invert",
+                                })
+                                .show_ui(ui, |ui| {
+                                    changed |= ui
+                                        .selectable_value(
+                                            &mut self.stair_direction,
+                                            StairDirection::Auto,
+                                            "Auto",
+                                        )
+                                        .changed();
+                                    changed |= ui
+                                        .selectable_value(
+                                            &mut self.stair_direction,
+                                            StairDirection::Normal,
+                                            "Normal",
+                                        )
+                                        .changed();
+                                    changed |= ui
+                                        .selectable_value(
+                                            &mut self.stair_direction,
+                                            StairDirection::Invert,
+                                            "Invert",
+                                        )
+                                        .changed();
+                                });
                         });
                     });
 
@@ -670,10 +711,11 @@ fn execute_from_file(
         c.request_repaint();
     }
 
-    let file_path = url_handler::ensure_commands_exist_with_logs(
+    let file_path = url_handler::ensure_commands_exist_with_options(
         &config.execution.url,
         Some(Arc::clone(logs)),
         false,
+        &config.execution.stair_direction,
     )?;
     logs.lock().unwrap().push(String::new());
     logs.lock()

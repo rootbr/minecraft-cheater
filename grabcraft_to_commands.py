@@ -97,6 +97,88 @@ def rotate_coordinates(x: int, z: int, rotation: int, width: int, depth: int) ->
         return x, z
 
 
+# ============================================================================
+# STAIR DIRECTION DETECTION
+# ============================================================================
+
+def parse_stair_direction(material: str) -> Optional[int]:
+    """Extract weirdo_direction from stair material name."""
+    material_lower = material.lower()
+    if 'stairs' not in material_lower:
+        return None
+
+    direction_map = {'east': 0, 'west': 1, 'south': 2, 'north': 3}
+    for direction, value in direction_map.items():
+        if direction in material_lower:
+            return value
+    return None
+
+
+def invert_direction(direction: int) -> int:
+    """Invert stair direction (east<->west, north<->south)."""
+    inversion_map = {0: 1, 1: 0, 2: 3, 3: 2}
+    return inversion_map.get(direction, direction)
+
+
+def detect_stair_inversion_needed(blocks: List[Dict]) -> bool:
+    """
+    Analyze staircase patterns to detect if directions are inverted.
+
+    For each stair, check if there's a stair one block higher in an adjacent position.
+    The expected direction depends on the horizontal offset to the upper stair:
+    - dx=+1 (east offset)  → stair should face east  (weirdo_direction=0)
+    - dx=-1 (west offset)  → stair should face west  (weirdo_direction=1)
+    - dz=+1 (south offset) → stair should face south (weirdo_direction=2)
+    - dz=-1 (north offset) → stair should face north (weirdo_direction=3)
+    """
+    stairs = [b for b in blocks if 'stairs' in b['material'].lower()]
+    if not stairs:
+        return False
+
+    stair_positions = {(b['x'], b['y'], b['z']): b for b in stairs}
+
+    correct_votes = 0
+    inverted_votes = 0
+
+    offset_to_direction = {
+        (1, 0): 0,   # east
+        (-1, 0): 1,  # west
+        (0, 1): 2,   # south
+        (0, -1): 3,  # north
+    }
+
+    for stair in stairs:
+        x, y, z = stair['x'], stair['y'], stair['z']
+        actual_dir = parse_stair_direction(stair['material'])
+        if actual_dir is None:
+            continue
+
+        for (dx, dz), expected_dir in offset_to_direction.items():
+            upper_pos = (x + dx, y + 1, z + dz)
+            if upper_pos in stair_positions:
+                if actual_dir == expected_dir:
+                    correct_votes += 1
+                elif actual_dir == invert_direction(expected_dir):
+                    inverted_votes += 1
+                break
+
+    return inverted_votes > correct_votes
+
+
+def invert_stair_direction(material: str) -> str:
+    """Invert stair direction in material name."""
+    replacements = [
+        ('North', 'South'), ('South', 'North'),
+        ('East', 'West'), ('West', 'East'),
+        ('north', 'south'), ('south', 'north'),
+        ('east', 'west'), ('west', 'east'),
+    ]
+    for old, new in replacements:
+        if old in material:
+            return material.replace(old, new)
+    return material
+
+
 
 
 # ============================================================================
@@ -313,10 +395,13 @@ def is_attachable_block(material: str) -> bool:
     return False
 
 
-def generate_commands(blocks: list[dict]) -> list[str]:
+def generate_commands(blocks: list[dict], stair_direction: str = 'auto') -> list[str]:
     """Generate Minecraft /setblock commands for all blocks."""
     converter = get_converter()
     converter.clear_door_cache()
+
+    # Determine if stair inversion is needed
+    should_invert = _should_invert_stairs(blocks, stair_direction)
 
     # Pass 1: Register all door upper blocks
     for b in blocks:
@@ -328,13 +413,17 @@ def generate_commands(blocks: list[dict]) -> list[str]:
     skipped = 0
 
     for b in blocks:
-        block_id = get_block_id(b['material'], b['x'], b['y'], b['z'], b['layer'])
+        material = b['material']
+        if should_invert and 'stairs' in material.lower():
+            material = invert_stair_direction(material)
+
+        block_id = get_block_id(material, b['x'], b['y'], b['z'], b['layer'])
         if block_id is None or block_id.startswith('__SKIP__'):
             skipped += 1
             continue
 
         cmd = f'/setblock {b["x"]} {b["y"]} {b["z"]} {block_id}'
-        if is_attachable_block(b['material']):
+        if is_attachable_block(material):
             attachable_commands.append(cmd)
         else:
             commands.append(cmd)
@@ -348,6 +437,23 @@ def generate_commands(blocks: list[dict]) -> list[str]:
     return commands
 
 
+def _should_invert_stairs(blocks: list[dict], stair_direction: str) -> bool:
+    """Determine if stairs should be inverted based on mode."""
+    if stair_direction == 'normal':
+        return False
+    if stair_direction == 'invert':
+        print('🔄 Stair direction: INVERT (forced)')
+        return True
+
+    # Auto mode - detect from staircase patterns
+    needs_inversion = detect_stair_inversion_needed(blocks)
+    if needs_inversion:
+        print('🔄 Stair direction: AUTO detected inverted stairs → inverting')
+    else:
+        print('✓ Stair direction: AUTO detected correct stairs → keeping')
+    return needs_inversion
+
+
 # ============================================================================
 # MAIN
 # ============================================================================
@@ -358,10 +464,13 @@ def parse_arguments():
         description='Convert GrabCraft blueprint to Minecraft Bedrock Edition commands.'
     )
     parser.add_argument('url', help='GrabCraft page URL')
-    parser.add_argument('-o', '--output', default='build_commands.txt', 
+    parser.add_argument('-o', '--output', default='build_commands.txt',
                         help='Output file (default: build_commands.txt)')
-    parser.add_argument('--save-csv', nargs='?', const='blocks.csv', 
+    parser.add_argument('--save-csv', nargs='?', const='blocks.csv',
                         help='Save blocks to CSV file (default: blocks.csv)')
+    parser.add_argument('--stair-direction', choices=['auto', 'normal', 'invert'],
+                        default='auto',
+                        help='Stair direction handling: auto (detect), normal (keep), invert (flip)')
     return parser.parse_args()
 
 def main():
@@ -394,7 +503,7 @@ def main():
     print('\n' + '=' * 60)
     print('GENERATING MINECRAFT COMMANDS')
     print('=' * 60)
-    commands = generate_commands(blocks)
+    commands = generate_commands(blocks, args.stair_direction)
 
     # Write output
     print(f'\nWriting commands to file...')

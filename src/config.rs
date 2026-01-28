@@ -5,6 +5,15 @@ use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum StairDirection {
+    #[default]
+    Auto,
+    Normal,
+    Invert,
+}
+
 // Timing constants (milliseconds)
 pub const KEY_PRESS_DELAY_MS: u64 = 50;
 pub const STATE_TIMEOUT_SECS: u64 = 1;
@@ -68,6 +77,9 @@ pub struct ExecutionConfig {
 
     #[serde(default)]
     pub material: Option<String>,
+
+    #[serde(default)]
+    pub stair_direction: StairDirection,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -156,6 +168,7 @@ impl Default for ExecutionConfig {
             url: default_url(),
             skip: 0,
             material: None,
+            stair_direction: StairDirection::default(),
         }
     }
 }
