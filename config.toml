@@ -1,11 +1,11 @@
 [execution]
-url = "https://www.grabcraft.com/minecraft/the-burning-bear-inn/medieval-houses#blueprints"
+url = "https://www.grabcraft.com/minecraft/american-suburban-home-4/modern-houses#blueprints"
 skip = 0
 
 [coordinates]
-offset_x = -70
-offset_y = 68
-offset_z = 89
+offset_x = -65
+offset_y = 72
+offset_z = 60
 
 [screen_regions.panel_region]
 x = 75
