@@ -9,9 +9,10 @@ use crate::config::StairDirection;
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 pub fn extract_path_from_url(url: &str) -> Option<String> {
-    if url.starts_with("https://www.grabcraft.com/minecraft/") {
-        let path = url.trim_start_matches("https://www.grabcraft.com/minecraft/");
-        Some(path.to_string())
+    if let Some(path) = url.strip_prefix("https://www.grabcraft.com/minecraft/") {
+        let slug = path.split('/').next().unwrap_or(path);
+        let slug = slug.split('#').next().unwrap_or(slug);
+        Some(slug.to_string())
     } else {
         None
     }
@@ -148,6 +149,7 @@ fn generate_commands_from_url(
 
     let base_output = dir_path.join("build_commands.txt");
     let optimized_output = dir_path.join("build_commands_optimized.txt");
+    let csv_output = dir_path.join("build.csv");
 
     log_message(&logs, format!("Generating commands from URL: {}", url));
     log_message(&logs, format!("Output directory: {}", dir_path.display()));
@@ -167,6 +169,8 @@ fn generate_commands_from_url(
             base_output.to_string_lossy().to_string(),
             "--stair-direction".to_string(),
             stair_arg.to_string(),
+            "--save-csv".to_string(),
+            csv_output.to_string_lossy().to_string(),
         ],
         &logs,
     )?;
@@ -204,4 +208,24 @@ fn generate_commands_from_url(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_path_from_url() {
+        let url = "https://www.grabcraft.com/minecraft/american-suburban-home-4/modern-houses#blueprints";
+        assert_eq!(extract_path_from_url(url), Some("american-suburban-home-4".to_string()));
+
+        let url = "https://www.grabcraft.com/minecraft/simple-house#blueprints";
+        assert_eq!(extract_path_from_url(url), Some("simple-house".to_string()));
+
+        let url = "https://www.grabcraft.com/minecraft/another-house";
+        assert_eq!(extract_path_from_url(url), Some("another-house".to_string()));
+
+        let url = "https://other-site.com/minecraft/house";
+        assert_eq!(extract_path_from_url(url), None);
+    }
 }

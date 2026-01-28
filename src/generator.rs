@@ -24,19 +24,24 @@ impl BuildPaths {
 }
 
 fn parse_url_to_path(url: &str) -> Result<PathBuf> {
+    if let Some(path_part) = url.strip_prefix("https://www.grabcraft.com/minecraft/") {
+        let slug = path_part.split('/').next().unwrap_or(path_part);
+        let slug = slug.split('#').next().unwrap_or(slug);
+        return Ok(PathBuf::from(slug));
+    }
+
     let parts: Vec<&str> = url
         .trim_end_matches('/')
         .split('/')
         .collect();
 
-    if parts.len() < 2 {
-        return Err("Invalid GrabCraft URL format".into());
+    if parts.len() >= 2 {
+        let name = parts[parts.len() - 2];
+        let category = parts[parts.len() - 1];
+        return Ok(PathBuf::from(format!("{}/{}", name, category)));
     }
 
-    let name = parts[parts.len() - 2];
-    let category = parts[parts.len() - 1];
-
-    Ok(PathBuf::from(format!("{}/{}", name, category)))
+    Err("Invalid GrabCraft URL format".into())
 }
 
 pub fn generate_from_url(url: &str) -> Result<BuildPaths> {
@@ -103,13 +108,20 @@ mod tests {
     fn test_parse_url() {
         let url = "https://www.grabcraft.com/minecraft/small-modern-villa/modern-houses";
         let path = parse_url_to_path(url).unwrap();
-        assert_eq!(path, PathBuf::from("small-modern-villa/modern-houses"));
+        assert_eq!(path, PathBuf::from("small-modern-villa"));
+    }
+
+    #[test]
+    fn test_parse_url_with_anchor() {
+        let url = "https://www.grabcraft.com/minecraft/american-suburban-home-4/modern-houses#blueprints";
+        let path = parse_url_to_path(url).unwrap();
+        assert_eq!(path, PathBuf::from("american-suburban-home-4"));
     }
 
     #[test]
     fn test_parse_url_with_trailing_slash() {
         let url = "https://www.grabcraft.com/minecraft/castle-tower/military/";
         let path = parse_url_to_path(url).unwrap();
-        assert_eq!(path, PathBuf::from("castle-tower/military"));
+        assert_eq!(path, PathBuf::from("castle-tower"));
     }
 }
