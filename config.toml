@@ -1,12 +1,12 @@
 [execution]
-url = "https://www.grabcraft.com/minecraft/american-suburban-home-4/modern-houses#blueprints"
+url = "https://www.grabcraft.com/minecraft/abstract-house-4/other-193#blueprints"
 skip = 0
 stair_direction = "auto"
 
 [coordinates]
-offset_x = -65
-offset_y = 72
-offset_z = 60
+offset_x = -115
+offset_y = 64
+offset_z = 180
 
 [screen_regions.panel_region]
 x = 75
