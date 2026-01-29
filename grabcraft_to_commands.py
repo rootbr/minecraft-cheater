@@ -388,7 +388,7 @@ def is_attachable_block(material: str) -> bool:
     block_id = get_block_id(material)
     if block_id is None:
         return False
-    attachable = ['ladder', 'torch', 'wall_torch']
+    attachable = ['ladder', 'torch', 'wall_torch', 'water']
     for b in attachable:
         if b in block_id:
             return True
@@ -429,12 +429,19 @@ def generate_commands(blocks: list[dict], stair_direction: str = 'auto') -> list
             commands.append(cmd)
 
     # Add attachable blocks at the end (they need support blocks first)
-    commands.extend(attachable_commands)
+    # Ensure water is placed last
+    regular_commands = [c for c in commands if 'water' not in c.lower()]
+    water_commands = [c for c in commands if 'water' in c.lower()]
+    
+    regular_attachable = [c for c in attachable_commands if 'water' not in c.lower()]
+    water_commands.extend([c for c in attachable_commands if 'water' in c.lower()])
+
+    result_commands = regular_commands + regular_attachable + water_commands
 
     if skipped > 0:
         print(f'✓ Skipped {skipped} blocks (auto-generated parts like bed feet)')
 
-    return commands
+    return result_commands
 
 
 def _should_invert_stairs(blocks: list[dict], stair_direction: str) -> bool:

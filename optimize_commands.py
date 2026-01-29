@@ -79,7 +79,7 @@ def can_use_fill(block_id: str) -> bool:
 
 def is_attachable_block(block_id: str) -> bool:
     """Check if block needs to be attached to another block."""
-    attachable = ['ladder', 'torch', 'wall_torch', 'vine', 'lever', 'rail']
+    attachable = ['ladder', 'torch', 'wall_torch', 'vine', 'lever', 'rail', 'water']
     for b in attachable:
         if b in block_id.lower():
             return True
@@ -243,7 +243,18 @@ def optimize_grid(grid: dict) -> tuple[list, list]:
                 setblock_commands.append(cmd)
 
     # Combine commands: fills first, then setblocks, then attachables last
-    all_commands = fill_commands + setblock_commands + attachable_commands
+    # Move all water commands to the very end as requested
+    water_from_fill = [c for c in fill_commands if 'water' in c.lower()]
+    remaining_fill = [c for c in fill_commands if 'water' not in c.lower()]
+
+    water_from_setblock = [c for c in setblock_commands if 'water' in c.lower()]
+    remaining_setblock = [c for c in setblock_commands if 'water' not in c.lower()]
+
+    water_from_attachable = [c for c in attachable_commands if 'water' in c.lower()]
+    remaining_attachable = [c for c in attachable_commands if 'water' not in c.lower()]
+
+    all_commands = (remaining_fill + remaining_setblock + remaining_attachable +
+                    water_from_fill + water_from_setblock + water_from_attachable)
     return all_commands, (len(fill_commands), len(setblock_commands + attachable_commands))
 
 
