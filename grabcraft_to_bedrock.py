@@ -8,6 +8,7 @@ to Minecraft Bedrock Edition block IDs with proper numeric/bit-based states.
 Based on GeyserMC/mappings patterns and Bedrock Edition 1.21+ block state system.
 """
 
+import csv
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -58,6 +59,44 @@ DOOR_MATERIALS = _BEDROCK_STATES["door_materials"]
 TRAPDOOR_MATERIALS = _BEDROCK_STATES["trapdoor_materials"]
 WALL_MATERIALS = _BEDROCK_STATES["wall_materials"]
 PRESSURE_PLATE_MATERIALS = _BEDROCK_STATES["pressure_plate_materials"]
+
+
+# =============================================================================
+# BLOCKMAP.CSV FALLBACK (from grabcraft-to-schema project)
+# =============================================================================
+
+def _load_blockmap() -> dict:
+    """Load blockmap.csv as fallback lookup: grabcraft name -> java block id (without minecraft: prefix).
+
+    Returns two dicts:
+      exact: full GrabCraft name (lowered) -> block id
+      base:  name with parenthesized content stripped (lowered) -> block id
+    """
+    exact = {}
+    base = {}
+    blockmap_path = Path(__file__).parent / "grabcraft-to-schema" / "blockmap.csv"
+    if not blockmap_path.exists():
+        return exact, base
+    with open(blockmap_path, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            gc_name = (row.get('from') or '').strip()
+            mc_id = (row.get('to') or '').strip()
+            if not gc_name or not mc_id:
+                continue
+            # Strip minecraft: prefix
+            if mc_id.startswith('minecraft:'):
+                mc_id = mc_id[len('minecraft:'):]
+            gc_lower = gc_name.lower()
+            if gc_lower not in exact:
+                exact[gc_lower] = mc_id
+            # Also index by base name (without parenthesized properties)
+            base_name = re.sub(r'\s*\([^)]*\)\s*$', '', gc_lower).strip()
+            if base_name and base_name not in base:
+                base[base_name] = mc_id
+    return exact, base
+
+_BLOCKMAP_EXACT, _BLOCKMAP_BASE = _load_blockmap()
 
 
 # =============================================================================
@@ -599,6 +638,14 @@ class SimpleBlockConverter(BaseConverter):
         block_id = GRABCRAFT_TO_BE.get(clean_name)
         if not block_id:
             block_id = JE_TO_BE_NAMES.get(clean_name)
+        if not block_id:
+            # Fallback: check blockmap.csv (exact match, then base name)
+            java_id = _BLOCKMAP_EXACT.get(clean_name) or _BLOCKMAP_BASE.get(
+                re.sub(r'\s*\([^)]*\)\s*$', '', clean_name).strip()
+            )
+            if java_id:
+                # blockmap uses Java IDs — remap to Bedrock if needed
+                block_id = JE_TO_BE_NAMES.get(java_id, java_id)
         if not block_id:
             block_id = clean_name.replace(' ', '_')
         return BedrockBlock(block_id=f'minecraft:{block_id}', states={})

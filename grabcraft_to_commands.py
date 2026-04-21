@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Convert GrabCraft blueprint URL directly to Minecraft Bedrock Edition commands.
+Convert GrabCraft blueprint URL directly to Minecraft commands.
+Supports both Bedrock Edition and Java Edition output.
 Fetches block data from web page and generates /setblock commands.
 No optimizations - pure 1:1 conversion from web blueprint to commands.
 """
@@ -15,7 +16,8 @@ from urllib.request import urlopen, Request
 from dataclasses import dataclass
 from typing import List, Dict, Tuple, Optional
 
-from grabcraft_to_bedrock import convert_grabcraft_to_bedrock, get_converter
+from grabcraft_to_bedrock import convert_grabcraft_to_bedrock, get_converter as get_bedrock_converter
+from grabcraft_to_java import convert_grabcraft_to_java, get_converter as get_java_converter
 
 # ============================================================================
 # COMPASS ROTATION DETECTION
@@ -373,14 +375,15 @@ def extract_blocks_from_web(page_url: str) -> list[dict]:
 # ============================================================================
 
 def get_block_id(material: str, x: Optional[int] = None, y: Optional[int] = None,
-                 z: Optional[int] = None, layer: Optional[int] = None) -> str | None:
+                 z: Optional[int] = None, layer: Optional[int] = None,
+                 edition: str = 'bedrock') -> str | None:
     if not material or not material.strip():
         return None
-    bedrock_id = convert_grabcraft_to_bedrock(material, x, y, z, layer)
-    if bedrock_id:
-        return bedrock_id
+    if edition == 'java':
+        block_id = convert_grabcraft_to_java(material, x, y, z, layer)
     else:
-        return None
+        block_id = convert_grabcraft_to_bedrock(material, x, y, z, layer)
+    return block_id if block_id else None
 
 
 def is_attachable_block(material: str) -> bool:
@@ -395,9 +398,13 @@ def is_attachable_block(material: str) -> bool:
     return False
 
 
-def generate_commands(blocks: list[dict], stair_direction: str = 'auto') -> list[str]:
+def generate_commands(blocks: list[dict], stair_direction: str = 'auto',
+                      edition: str = 'bedrock') -> list[str]:
     """Generate Minecraft /setblock commands for all blocks."""
-    converter = get_converter()
+    if edition == 'java':
+        converter = get_java_converter()
+    else:
+        converter = get_bedrock_converter()
     converter.clear_door_cache()
 
     # Determine if stair inversion is needed
@@ -417,7 +424,7 @@ def generate_commands(blocks: list[dict], stair_direction: str = 'auto') -> list
         if should_invert and 'stairs' in material.lower():
             material = invert_stair_direction(material)
 
-        block_id = get_block_id(material, b['x'], b['y'], b['z'], b['layer'])
+        block_id = get_block_id(material, b['x'], b['y'], b['z'], b['layer'], edition)
         if block_id is None or block_id.startswith('__SKIP__'):
             skipped += 1
             continue
@@ -468,7 +475,7 @@ def _should_invert_stairs(blocks: list[dict], stair_direction: str) -> bool:
 def parse_arguments():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description='Convert GrabCraft blueprint to Minecraft Bedrock Edition commands.'
+        description='Convert GrabCraft blueprint to Minecraft commands (Bedrock or Java Edition).'
     )
     parser.add_argument('url', help='GrabCraft page URL')
     parser.add_argument('-o', '--output', default='build_commands.txt',
@@ -478,6 +485,8 @@ def parse_arguments():
     parser.add_argument('--stair-direction', choices=['auto', 'normal', 'invert'],
                         default='auto',
                         help='Stair direction handling: auto (detect), normal (keep), invert (flip)')
+    parser.add_argument('--edition', choices=['bedrock', 'java'], default='bedrock',
+                        help='Target edition: bedrock (default) or java')
     return parser.parse_args()
 
 def main():
@@ -508,9 +517,10 @@ def main():
 
     # Generate commands
     print('\n' + '=' * 60)
-    print('GENERATING MINECRAFT COMMANDS')
+    edition_label = 'JAVA' if args.edition == 'java' else 'BEDROCK'
+    print(f'GENERATING MINECRAFT {edition_label} EDITION COMMANDS')
     print('=' * 60)
-    commands = generate_commands(blocks, args.stair_direction)
+    commands = generate_commands(blocks, args.stair_direction, args.edition)
 
     # Write output
     print(f'\nWriting commands to file...')
